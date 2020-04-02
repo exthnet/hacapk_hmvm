@@ -4,11 +4,8 @@ module m_HACApK_hdump
   use m_HACApK_calc_entry_ij
 !  use omp_lib
   implicit integer*4(i-n)
-!  integer omp_get_thread_num, omp_get_num_threads
-!  external omp_get_thread_num, omp_get_num_threads
 
 contains
-
 
   ! show hmatrix information
   subroutine HACApK_info_leafmtx(st_leafmtxp,st_ctl,mpinr)

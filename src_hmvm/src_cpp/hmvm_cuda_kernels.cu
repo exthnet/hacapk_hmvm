@@ -9,9 +9,10 @@
 // 0: 完全逐次
 
 // 1 block, 1 thread
+template <class T>
 __global__ void hmvm_cudaD_dense
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat, int ndense, int *dense)
+(T *d_zaut, T *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat, int ndense, int *dense)
 {
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cudaD_dense : begin\n");
@@ -20,7 +21,7 @@ __global__ void hmvm_cudaD_dense
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  double tmp;
+  T tmp;
   int i;
 
   for(i=0; i<ndense; i++){
@@ -50,9 +51,10 @@ __global__ void hmvm_cudaD_dense
 #endif
 }
 
+template <class T>
 __global__ void hmvm_cudaD
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+(T *d_zaut, T *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
  int napprox, int *approx, int ndense, int *dense)
 {
 #if _DEBUG_LEVEL >= 2
@@ -61,8 +63,8 @@ __global__ void hmvm_cudaD
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  double tmp;
-  extern __shared__ double tmp2[];
+  T tmp;
+  extern __shared__ T tmp2[];
   int i;
 
   // approx
@@ -132,10 +134,10 @@ __global__ void hmvm_cudaD
 */
 
 // nlf block, 32 thread
-template <int div>
+template <class T, int div>
 __global__ void hmvm_cudaD_kernel00dd00
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat, int ndense, int *dense)
+(T *d_zaut, T *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat, int ndense, int *dense)
 {
   return;
 #if _DEBUG_LEVEL >= 2
@@ -150,7 +152,7 @@ __global__ void hmvm_cudaD_kernel00dd00
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  double tmp;
+  T tmp;
 
   ip = dense[gid];
   {
@@ -182,9 +184,10 @@ __global__ void hmvm_cudaD_kernel00dd00
 }
 #endif
 
+template <class T>
 __global__ void hmvm_cudaD_block
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+(T *d_zaut, T *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
  int napprox, int *approx, int ndense, int *dense)
 {
 #if _DEBUG_LEVEL >= 2
@@ -193,8 +196,8 @@ __global__ void hmvm_cudaD_block
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  double tmp;
-  extern __shared__ double tmp2[];
+  T tmp;
+  extern __shared__ T tmp2[];
   int i;
 
   // approx

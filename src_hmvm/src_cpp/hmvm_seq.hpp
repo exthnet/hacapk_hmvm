@@ -1,20 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <typeinfo>
 #include <omp.h>
 
-#include "hacapk_c.h"
-
 // ######## ######## ######## ########
-void hmvm_seq_1(double *v, matrix mat, double *b)
+template<class T>
+void hmvm_seq_1(T *v, matrix<T> mat, T *b)
 {
   int i, j;
-  double *tmp;
+  T *tmp;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1: begin\n");
   printf("hmvm_seq1: nlf=%d\n", mat.nlf);
 #endif
-  tmp = (double*)malloc(sizeof(double)*mat.ktmax);
+  tmp = (T*)malloc(sizeof(T)*mat.ktmax);
   for(i=0;i<mat.nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -58,15 +58,16 @@ void hmvm_seq_1(double *v, matrix mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_1t(double *v, matrix mat, double *b)
+template<class T>
+void hmvm_seq_1t(T *v, matrix<T> mat, T *b)
 {
   int i, j;
-  double *tmp;
+  T *tmp;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1_t: begin\n");
   printf("hmvm_seq1_t: nlf=%d\n", mat.nlf);
 #endif
-  tmp = (double*)malloc(sizeof(double)*mat.ktmax);
+  tmp = (T*)malloc(sizeof(T)*mat.ktmax);
   for(i=0;i<mat.nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -110,15 +111,16 @@ void hmvm_seq_1t(double *v, matrix mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_2(double *v, matrix2 mat, double *b)
+template<class T>
+void hmvm_seq_2(T *v, matrix2<T> mat, T *b)
 {
   int i, j;
-  double *tmp;
+  T *tmp;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2: begin\n");
   printf("hmvm_seq2: nlf=%d\n", mat.nlf);
 #endif
-  tmp = (double*)malloc(sizeof(double)*mat.ktmax);
+  tmp = (T*)malloc(sizeof(T)*mat.ktmax);
   for(i=0;i<mat.nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -166,15 +168,16 @@ void hmvm_seq_2(double *v, matrix2 mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_2t(double *v, matrix2 mat, double *b)
+template<class T>
+void hmvm_seq_2t(T *v, matrix2<T> mat, T *b)
 {
   int i, j;
-  double *tmp;
+  T *tmp;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2_t: begin\n");
   printf("hmvm_seq2_t: nlf=%d\n", mat.nlf);
 #endif
-  tmp = (double*)malloc(sizeof(double)*mat.ktmax);
+  tmp = (T*)malloc(sizeof(T)*mat.ktmax);
   for(i=0;i<mat.nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -223,20 +226,23 @@ void hmvm_seq_2t(double *v, matrix2 mat, double *b)
 
 
 // ######## ######## ######## ########
-void hmvm_seq(matrix mat, matrix2 mat2, double *b, int dump_result)
+template<class T>
+void hmvm_seq(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
 {
   int i, nd=mat.nd;
+  char fname[0xff];
   FILE *F;
-  double *v=NULL;
-  printf("hmvm_seq: begin\n");
-  v=(double*)malloc(sizeof(double)*nd);
+  T *v=NULL;
+  printf("hmvm_seq_%s: begin\n", typeid(T).name());
+  v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
   printf("hmvm_seq_1\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_1(v, mat, b);
   if(dump_result){
-	F = fopen("seq_1_d.txt", "w");
+	snprintf(fname, 0xff, "seq_1_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -246,7 +252,8 @@ void hmvm_seq(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_1t(v, mat, b);
   if(dump_result){
-	F = fopen("seq_1t_d.txt", "w");
+	snprintf(fname, 0xff, "seq_1t_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -256,7 +263,8 @@ void hmvm_seq(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_2(v, mat2, b);
   if(dump_result){
-	F = fopen("seq_2_d.txt", "w");
+	snprintf(fname, 0xff, "seq_2_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -266,25 +274,27 @@ void hmvm_seq(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_2t(v, mat2, b);
   if(dump_result){
-	F = fopen("seq_2t_d.txt", "w");
+	snprintf(fname, 0xff, "seq_2t_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
 
   free(v);
 
-  printf("hmvm_seq: end\n");
+  printf("hmvm_seq_%s: end\n", typeid(T).name());
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_bench(matrix mat, matrix2 mat2, double *b)
+template<class T>
+void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 {
   const int L=10;
   int i, l, nd=mat.nd;
   double d1, d2, dtimes[L], dmin, dmax, davg;
-  double *v=NULL;
-  printf("hmvm_seq_bench: begin\n");
-  v=(double*)malloc(sizeof(double)*nd);
+  T *v=NULL;
+  printf("hmvm_seq_%s_bench: begin\n", typeid(T).name());
+  v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
   {
@@ -376,5 +386,5 @@ void hmvm_seq_bench(matrix mat, matrix2 mat2, double *b)
 
   free(v);
 
-  printf("hmvm_seq_bench: end\n");
+  printf("hmvm_seq_%s_bench: end\n", typeid(T).name());
 }

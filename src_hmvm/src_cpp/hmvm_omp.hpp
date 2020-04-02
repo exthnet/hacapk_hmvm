@@ -3,18 +3,17 @@
 #include <string.h>
 #include <omp.h>
 
-#include "hacapk_c.h"
-
 // ######## ######## ######## ########
-void  hmvm_omp_1
-(double *zau, matrix mat, double *zu)
+template<class T>
+void hmvm_omp_1
+(T *zau, matrix<T> mat, T *zu)
 {
 #pragma omp parallel
   {
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
-	double *zaut, *zbut;
+	T *zaut, *zbut;
 	int ls, le;
 	int i;
 	int nd = mat.nd;
@@ -23,9 +22,9 @@ void  hmvm_omp_1
 #pragma omp for
 	for(i=0;i<nd;i++)zau[i]=0.0;
 
-	zaut = (double*)malloc(sizeof(double)*nd);
+	zaut = (T*)malloc(sizeof(T)*nd);
 	for(il=0;il<nd;il++)zaut[il]=0.0;
-	zbut = (double*)malloc(sizeof(double)*mat.ktmax);
+	zbut = (T*)malloc(sizeof(T)*mat.ktmax);
 	ls = nd;
 	le = 1;
 #pragma omp for
@@ -75,15 +74,16 @@ void  hmvm_omp_1
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_1t
-(double *zau, matrix mat, double *zu)
+template<class T>
+void hmvm_omp_1t
+(T *zau, matrix<T> mat, T *zu)
 {
 #pragma omp parallel
   {
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
-	double *zaut, *zbut;
+	T *zaut, *zbut;
 	int ls, le;
 	int i;
 	int nd = mat.nd;
@@ -92,9 +92,9 @@ void  hmvm_omp_1t
 #pragma omp for
 	for(i=0;i<nd;i++)zau[i]=0.0;
 
-	zaut = (double*)malloc(sizeof(double)*nd);
+	zaut = (T*)malloc(sizeof(T)*nd);
 	for(il=0;il<nd;il++)zaut[il]=0.0;
-	zbut = (double*)malloc(sizeof(double)*mat.ktmax);
+	zbut = (T*)malloc(sizeof(T)*mat.ktmax);
 	ls = nd;
 	le = 1;
 #pragma omp for
@@ -144,15 +144,16 @@ void  hmvm_omp_1t
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_2
-(double *zau, matrix2 mat, double *zu)
+template<class T>
+void hmvm_omp_2
+(T *zau, matrix2<T> mat, T *zu)
 {
 #pragma omp parallel
   {
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
-	double *zaut, *zbut;
+	T *zaut, *zbut;
 	int ls, le;
 	int i;
 	int nd = mat.nd;
@@ -162,9 +163,9 @@ void  hmvm_omp_2
 #pragma omp for
 	for(i=0;i<nd;i++)zau[i]=0.0;
 
-	zaut = (double*)malloc(sizeof(double)*nd);
+	zaut = (T*)malloc(sizeof(T)*nd);
 	for(il=0;il<nd;il++)zaut[il]=0.0;
-	zbut = (double*)malloc(sizeof(double)*mat.ktmax);
+	zbut = (T*)malloc(sizeof(T)*mat.ktmax);
 	ls = nd;
 	le = 1;
 #pragma omp for
@@ -217,15 +218,16 @@ void  hmvm_omp_2
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_2t
-(double *zau, matrix2 mat, double *zu)
+template<class T>
+void hmvm_omp_2t
+(T *zau, matrix2<T> mat, T *zu)
 {
 #pragma omp parallel
   {
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
-	double *zaut, *zbut;
+	T *zaut, *zbut;
 	int ls, le;
 	int i;
 	int nd = mat.nd;
@@ -235,9 +237,9 @@ void  hmvm_omp_2t
 #pragma omp for
 	for(i=0;i<nd;i++)zau[i]=0.0;
 
-	zaut = (double*)malloc(sizeof(double)*nd);
+	zaut = (T*)malloc(sizeof(T)*nd);
 	for(il=0;il<nd;il++)zaut[il]=0.0;
-	zbut = (double*)malloc(sizeof(double)*mat.ktmax);
+	zbut = (T*)malloc(sizeof(T)*mat.ktmax);
 	ls = nd;
 	le = 1;
 #pragma omp for
@@ -291,20 +293,23 @@ void  hmvm_omp_2t
 
 
 // ######## ######## ######## ########
-void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result)
+template<class T>
+void hmvm_omp(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
 {
   int i, nd=mat.nd;
+  char fname[0xff];
   FILE *F;
-  double *v=NULL;
-  printf("hmvm_omp: begin\n");
-  v=(double*)malloc(sizeof(double)*nd);
+  T *v=NULL;
+  printf("hmvm_omp_%s: begin\n", typeid(T).name());
+  v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
   printf("hmvm_omp_1\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1(v, mat, b);
   if(dump_result){
-	F = fopen("omp_1_d.txt", "w");
+	snprintf(fname, 0xff, "omp_1_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -314,7 +319,8 @@ void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1t(v, mat, b);
   if(dump_result){
-	F = fopen("omp_1t_d.txt", "w");
+	snprintf(fname, 0xff, "omp_1t_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -324,7 +330,8 @@ void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2(v, mat2, b);
   if(dump_result){
-	F = fopen("omp_2_d.txt", "w");
+	snprintf(fname, 0xff, "omp_2_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
@@ -334,25 +341,27 @@ void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2t(v, mat2, b);
   if(dump_result){
-	F = fopen("omp_2t_d.txt", "w");
+	snprintf(fname, 0xff, "omp_2t_%s.txt", typeid(T).name());
+	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }
 
   free(v);
 
-  printf("hmvm_omp: end\n");
+  printf("hmvm_omp_%s: end\n", typeid(T).name());
 }
 
 // ######## ######## ######## ########
-void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
+template<class T>
+void hmvm_omp_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 {
   const int L=10;
   int i, l, nd=mat.nd;
   double d1, d2, dtimes[L], dmin, dmax, davg;
-  double *v=NULL;
-  printf("hmvm_omp_bench: begin\n");
-  v=(double*)malloc(sizeof(double)*nd);
+  T *v=NULL;
+  printf("hmvm_omp_%s_bench: begin\n", typeid(T).name());
+  v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
   {
@@ -444,5 +453,5 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 
   free(v);
 
-  printf("hmvm_omp_bench: end\n");
+  printf("hmvm_omp_%s_bench: end\n", typeid(T).name());
 }

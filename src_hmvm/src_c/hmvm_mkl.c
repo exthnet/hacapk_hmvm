@@ -150,8 +150,8 @@ void hmvm_blas_p(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_p_calc_1(v, mat, b, tmp);
 	if(dump_result){
-	  F = fopen("blas_p_1.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_p_1_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -162,8 +162,8 @@ void hmvm_blas_p(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_p_calc_1t(v, mat, b, tmp);
 	if(dump_result){
-	  F = fopen("blas_p_1t.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_p_1t_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -174,8 +174,8 @@ void hmvm_blas_p(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_p_calc_2(v, mat2, b, tmp);
 	if(dump_result){
-	  F = fopen("blas_p_2.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_p_2_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -186,8 +186,8 @@ void hmvm_blas_p(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_p_calc_2t(v, mat2, b, tmp);
 	if(dump_result){
-	  F = fopen("blas_p_2t.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_p_2t_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -542,8 +542,8 @@ void hmvm_blas_s(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_s_calc_1(v, mat, b);
 	if(dump_result){
-	  F = fopen("blas_s_1.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_s_1_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -553,8 +553,8 @@ void hmvm_blas_s(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_s_calc_1t(v, mat, b);
 	if(dump_result){
-	  F = fopen("blas_s_1t.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_s_1t_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -564,8 +564,8 @@ void hmvm_blas_s(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_s_calc_2(v, mat2, b);
 	if(dump_result){
-	  F = fopen("blas_s_2.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_s_2_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
@@ -575,8 +575,8 @@ void hmvm_blas_s(matrix mat, matrix2 mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_blas_s_calc_2t(v, mat2, b);
 	if(dump_result){
-	  F = fopen("blas_s_2t.txt", "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	  F = fopen("blas_s_2t_d.txt", "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
   }
