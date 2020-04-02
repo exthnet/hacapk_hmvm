@@ -291,7 +291,7 @@ void  hmvm_omp_2t
 
 
 // ######## ######## ######## ########
-void hmvm_omp(matrix mat, matrix2 mat2, double *b)
+void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result)
 {
   int i, nd=mat.nd;
   FILE *F;
@@ -303,33 +303,41 @@ void hmvm_omp(matrix mat, matrix2 mat2, double *b)
   printf("hmvm_omp_1\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1(v, mat, b);
-  F = fopen("omp_1.txt", "w");
-  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-  fclose(F);
+  if(dump_result){
+	F = fopen("omp_1.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
+  }
 
   // hmvm (loop tranposed)
   printf("hmvm_omp_1t\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1t(v, mat, b);
-  F = fopen("omp_1t.txt", "w");
-  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-  fclose(F);
+  if(dump_result){
+	F = fopen("omp_1t.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
+  }
 
   // hmvm using rowmat array
   printf("hmvm_omp_2\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2(v, mat2, b);
-  F = fopen("omp_2.txt", "w");
-  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-  fclose(F);
+  if(dump_result){
+	F = fopen("omp_2.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
+  }
 
   // hmvm using rowmat array (loop tranposed)
   printf("hmvm_omp_2t\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2t(v, mat2, b);
-  F = fopen("omp_2t.txt", "w");
-  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-  fclose(F);
+  if(dump_result){
+	F = fopen("omp_2t.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
+  }
 
   free(v);
 
@@ -341,7 +349,6 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 {
   const int L=10;
   int i, l, nd=mat.nd;
-  FILE *F;
   double d1, d2, dtimes[L], dmin, dmax, davg;
   double *v=NULL;
   printf("hmvm_omp_bench: begin\n");
@@ -357,9 +364,6 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	F = fopen("omp_1.txt", "w");
-	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -382,9 +386,6 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	F = fopen("omp_1t.txt", "w");
-	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -407,9 +408,6 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	F = fopen("omp_2.txt", "w");
-	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -432,9 +430,6 @@ void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	F = fopen("omp_2t.txt", "w");
-	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
-	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
