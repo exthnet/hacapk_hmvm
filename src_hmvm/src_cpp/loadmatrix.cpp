@@ -6,7 +6,7 @@
 
 int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
 {
-  int i;
+  int i, ret;
   FILE *F;
   int irecord;
   double drecord;
@@ -17,11 +17,11 @@ int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
 	printf("fopen %s failed\n", fname);
 	return -1;
   }
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&nd, sizeof(int), 1, F);
-  fread(&nlf, sizeof(int), 1, F);
-  fread(&ktmax, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&nd, sizeof(int), 1, F);
+  ret = fread(&nlf, sizeof(int), 1, F);
+  ret = fread(&ktmax, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
   printf("nd =  %d\n", nd);
   printf("nlf = %d\n", nlf);
   printf("ktmax = %d\n", ktmax);
@@ -40,14 +40,14 @@ int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
   printf("loadHmatrix: load rowdata\n"); fflush(stdout);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
-	fread(&irecord, sizeof(int), 1, F);
-	fread(&ltmtx, sizeof(int), 1, F);
-	fread(&ndl, sizeof(int), 1, F);
-	fread(&ndt, sizeof(int), 1, F);
-	fread(&nstrtl, sizeof(int), 1, F);
-	fread(&nstrtt, sizeof(int), 1, F);
-	fread(&kt, sizeof(int), 1, F);
-	fread(&irecord, sizeof(int), 1, F);
+	ret = fread(&irecord, sizeof(int), 1, F);
+	ret = fread(&ltmtx, sizeof(int), 1, F);
+	ret = fread(&ndl, sizeof(int), 1, F);
+	ret = fread(&ndt, sizeof(int), 1, F);
+	ret = fread(&nstrtl, sizeof(int), 1, F);
+	ret = fread(&nstrtt, sizeof(int), 1, F);
+	ret = fread(&kt, sizeof(int), 1, F);
+	ret = fread(&irecord, sizeof(int), 1, F);
 	//printf("%d: %d %d %d %d %d %d\n", i,ltmtx, ndl, ndt, nstrtl, nstrtt, kt);
 
 	mat->submat[i].ltmtx = ltmtx;
@@ -61,12 +61,12 @@ int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
 	  mat->submat[i].a1 = (double*)malloc(sizeof(double)*kt*ndt);
 	  mat->submat[i].a2 = (double*)malloc(sizeof(double)*kt*ndl);
 	  mat->submat[i].a2t = (double*)malloc(sizeof(double)*kt*ndl);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a1, sizeof(double), kt*ndt, F);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a2, sizeof(double), kt*ndl, F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a1, sizeof(double), kt*ndt, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a2, sizeof(double), kt*ndl, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  len += kt*ndt + kt*ndl;
 	  int x, y;
 	  for(y=0;y<kt;y++){
@@ -78,9 +78,9 @@ int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
 	  mat->submat[i].a1 = (double*)malloc(sizeof(double)*ndl*ndt);
 	  mat->submat[i].a2 = NULL;
 	  mat->submat[i].a2t = NULL;
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a1, sizeof(double), ndl*ndt, F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a1, sizeof(double), ndl*ndt, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  len += ndl*ndt;
 	}
   }

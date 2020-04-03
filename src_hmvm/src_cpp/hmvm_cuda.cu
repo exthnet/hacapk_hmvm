@@ -14,15 +14,15 @@
 template<class T>
 void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 {
-  const int L=5, M=5;
+  const int L=10, M=5;
   FILE *F;
   matrix2<T> d_sm;
   int i, l, nd = mat2.nd;
-  double d1, d2, dtimes[L+M], dmin, dmax, davg1, davg2;
+  double d1, d2, dtimes[L], dmin, dmax, davg;
   T *v=NULL, *tmp=NULL, *zero;
   T *d_b, *d_v, *d_zaut, *d_zbut;
   int ip;
-  int len, offset=0;
+  int len;
   cudaError_t ret;
   printf("hmvm_cuda1_%s: begin\n", typeid(T).name());
   v    = new T[mat2.nd];    //(double*)malloc(sizeof(double)*mat2.nd);
@@ -89,19 +89,7 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   d_sm.ndense  = mat2.ndense;
   printf("end splitting\n");
 
-#if 0
-  hmvm_cudaD_kernel00dd00<16><<<mat2.ndense,32>>>						\
-  (d_v, d_b, mat2.nlf, mat2.ktmax, mat2.ltmtx, mat2.ndt, mat2.ndl, mat2.nstrtl, mat2.nstrtt, mat2.kt, mat2.a1, mat2.a2, mat2.rowmat, mat2.ndense, mat2.dense);\
-
-
-	hmvm_cudaD_kernel000000<<<mat2.ndense,32>>>						\
-	  (d_v, d_b, mat2.nlf, mat2.ktmax, mat2.ltmtx, mat2.ndt, mat2.ndl, mat2.nstrtl, mat2.nstrtt, mat2.kt, mat2.a1, mat2.a2, mat2.rowmat, mat2.ndense, mat2.dense); \
-
-  //FUNCNAME(d_v, d_b, d_sm, a1, a2);									\
-
-#endif
-
-#define BENCH(FUNCNAME,B,T,S)											\
+#define EXEC(FUNCNAME,B,T,S)											\
   printf("nd = %d\n", nd);												\
   cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
   cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
@@ -117,31 +105,32 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);							\
   fclose(F);
 
-#if 0
-	hmvm_cudaD<<<1,1,d_sm.ktmax*sizeof(T)>>>							\
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax, d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, \
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
-
-#endif
-
-#if 0
-  for(l=0;l<M+L;l++){													\
+#define BENCH(FUNCNAME,B,T,S)											\
+  printf("nd = %d\n", nd);												\
+  for(l=0;l<L;l++){														\
 	for(i=0;i<nd;i++)v[i] = 0.0;										\
+	cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice);			\
+	cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice);			\
+	cudaDeviceSynchronize();											\
 	d1 = omp_get_wtime();												\
+	FUNCNAME<<<B,T,S>>>													\
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,		\
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
 	cudaDeviceSynchronize();											\
 	d2 = omp_get_wtime();												\
 	dtimes[l] = d2-d1;													\
   }																		\
-  dmin = 9999.99;         dmax = 0.0;									\
-  davg1 = 0.0;            davg2 = 0.0;									\
-  for(i=0;i<M+L;i++)davg1 += dtimes[i];									\
-  for(i=M;i<M+L;i++){													\
+  dmin = 9999.99;														\
+  dmax = 0.0;															\
+  davg = 0.0;															\
+  for(i=M;i<L;i++){														\
+	davg += dtimes[i];													\
 	if(dmin>dtimes[i])dmin=dtimes[i];									\
 	if(dmax<dtimes[i])dmax=dtimes[i];									\
-	davg2 += dtimes[i];													\
   }																		\
-  davg1 /= (M+L);         davg2 /= L;
-#endif
+  davg /= (L-5);
 
   // sequential
   if(kernel==0)
@@ -152,10 +141,9 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	snprintf(name,8,"_%d_%d",a1,a2);
 	snprintf(fname,32,"result_cuda1%s_%s.txt", name, typeid(T).name());
 	printf("fname = %s\n", fname);
+	EXEC(hmvm_cuda_seq<T>,1,1,d_sm.ktmax*sizeof(T));
 	BENCH(hmvm_cuda_seq<T>,1,1,d_sm.ktmax*sizeof(T));
-	printf("TIME %d hmvm_cuda1%s min %e max %e avg1 %e avg2 %e |", M+L, name, dmin, dmax, davg1, davg2);
-	for(i=0;i<M+L;i++)printf(" %.3E", dtimes[i]);
-	printf("\n");
+	printf("TIME %d hmvm_cuda1%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   // block parallel
   if(kernel==1)
@@ -166,10 +154,9 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	snprintf(name,8,"_%d_%d",a1,a2);
 	snprintf(fname,32,"result_cuda1blk%s_%s.txt", name, typeid(T).name());
 	printf("fname = %s\n", fname);
+	EXEC(hmvm_cuda_block<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
 	BENCH(hmvm_cuda_block<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
-	printf("TIME %d hmvm_cuda1%s min %e max %e avg1 %e avg2 %e |", M+L, name, dmin, dmax, davg1, davg2);
-	for(i=0;i<M+L;i++)printf(" %.3E", dtimes[i]);
-	printf("\n");
+	printf("TIME %d hmvm_cuda1blk%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########
