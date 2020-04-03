@@ -18,12 +18,12 @@ src_hdumpで出力したバイナリファイルを用いてH行列ベクトル�
 ### 使い方
 
 - src_c
- シンプルなC言語コード、CPU(OpenMP含む)向け、倍精度。
+ -- シンプルなC言語コード、CPU(OpenMP含む)向け、倍精度。
 
 - src_cpp
- - C++コード、CPU(OpenMP)とGPU(CUDA)、単精度と倍精度。
+ -- C++コード、CPU(OpenMP)とGPU(CUDA)、単精度と倍精度。
  実装(移植)中。
- - Makefile.gnu
+ -- Makefile.gnu
  GNU + CUDA 環境向けのMakefile。
  - hacapk.h
  H行列の定義。
