@@ -3,9 +3,9 @@
 #include <string.h>
 #include <math.h>
 
-#include "hacapk_cpp.hpp"
-#include "hmvm_seq.hpp"
-#include "hmvm_omp.hpp"
+#include "hacapk.h"
+#include "hmvm_seq.h"
+#include "hmvm_omp.h"
 #include "hmvm_cuda.h"
 
 int main(int argc, char **argv)

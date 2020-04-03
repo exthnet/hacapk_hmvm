@@ -11,9 +11,9 @@ NVCCFLAGS = -Xcompiler "-O3 -fopenmp" \
 
 ######################
 # Object files
-OBJS  = loadmatrix.o hmvm.o
-CUOBJS = hmvm_cuda.o
-HOBJS = hacapk_cpp.hpp hmvm_seq.hpp hmvm_omp.hpp
+OBJS  = loadmatrix.o hmvm.o hmvm_omp.o hmvm_seq.o
+CUOBJS = hmvm_cuda.o hmvm_cuda_kernels.o
+HOBJS = hacapk.h
 
 ######################
 # Compile cmmands

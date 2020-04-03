@@ -24,10 +24,20 @@ src_hdumpで出力したバイナリファイルを用いてH行列ベクトル�
 C++コード、CPU(OpenMP)とGPU(CUDA)、単精度と倍精度。
 実装(移植)中。
 -- Makefile.gnu
+ GNU + CUDA 環境向けのMakefile。
+-- hacapk.h
+ H行列の定義。
 -- loadmatrix.cpp
+ hdumpで出力したバイナリファイルを読み込む機能。
 -- hmvm.cpp
--- hmvm_cuda.cpp
--- hacapk_cpp.hpp
--- hmvm_seq.hpp
--- hmavm_omp.hpp
+ main関数。
+-- hmvm_seq.cpp, hmvm_seq.h
+ 逐次HMVMコード。
+-- hmvm_omp.cpp, hmvm_omp.h
+ OpenMP版HMVMコード。
+-- hmvm_cuda.cu, hmvm_cuda.h
+ CUDA版HMVMコード。
+-- hmvm_cuda_kernels.cu, hmvm_cuda_kernels.h
+ CUDAカーネル。
+
 

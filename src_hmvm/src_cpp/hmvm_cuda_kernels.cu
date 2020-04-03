@@ -5,6 +5,8 @@
 #include <omp.h>
 #include <cuda_runtime_api.h>
 
+#include "hacapk.h"
+
 #if __CUDA_ARCH__ < 600
 __device__ double myAtomicAdd(double* address, double val)
 {
@@ -33,49 +35,6 @@ __device__ float myAtomicAdd(float* address, float val)
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // 0: 完全逐次
-
-// 1 block, 1 thread
-template <class T>
-__global__ void hmvm_cudaD_dense
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat, int ndense, int *dense)
-{
-#if _DEBUG_LEVEL >= 2
-  printf("hmvm_cudaD_dense : begin\n");
-#endif
-  //int gid  = blockIdx.x;
-  int ndl, ndt, nstrtl, nstrtt, ltmtx;
-  int ip, kt, il, it, itt, itl, ill;
-  size_t head;
-  T tmp;
-  int i;
-
-  for(i=0; i<ndense; i++){
-	ip = dense[i];
-	ndl = _ndl[ip];
-	ndt = _ndt[ip];
-	nstrtl = _nstrtl[ip];
-	nstrtt = _nstrtt[ip];
-	ltmtx = _ltmtx[ip];
-#if _DEBUG_LEVEL >= 3
-	printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
-#endif
-	head = a1[ip];
-	for(il=0; il<ndl; il++){
-	  tmp = 0.0;
-	  ill=il+nstrtl-1;
-	  for(it=0; it<ndt; it++){
-		itt=it+nstrtt-1;
-		itl=it+il*ndt;
-		tmp += rowmat[head+itl]*d_zu[itt];
-	  }
-	  myAtomicAdd(&d_zaut[ill], tmp);
-	}
-  }
-#if _DEBUG_LEVEL >= 2
-  printf("hmvm_cudaD_dense : end\n");
-#endif
-}
 
 template <class T>
 __global__ void hmvm_cuda_seq
@@ -212,6 +171,7 @@ __global__ void hmvm_cudaD_kernel00dd00
 }
 #endif
 
+// block並列化カーネル
 template <class T>
 __global__ void hmvm_cuda_block
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
@@ -288,3 +248,22 @@ __global__ void hmvm_cuda_block
   printf("hmvm_cudaD_block : end\n");
 #endif
 }
+
+
+// ######## ######## ######## ########
+template __global__ void hmvm_cuda_seq<float>
+(float *d_zaut, float *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_seq<double>
+(double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_block<float>
+(float *d_zaut, float *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_block<double>
+(double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+ int napprox, int *approx, int ndense, int *dense);

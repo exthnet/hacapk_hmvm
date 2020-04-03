@@ -6,8 +6,8 @@
 #include <omp.h>
 #include <cuda_runtime_api.h>
 
-#include "hacapk_cpp.hpp"
-#include "hmvm_cuda_kernels.cu"
+#include "hacapk.h"
+#include "hmvm_cuda_kernels.h"
 
 #define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
 
