@@ -21,10 +21,13 @@ mpirun等を噛ませる必要はない。
 ### 概要
 src_hdumpで出力したバイナリファイルを用いてH行列ベクトル積を行うテストコード群。
 ### 構成と使い方
-#### src_c ディレクトリ：シンプルなC言語コード、CPU(OpenMP含む)向け、倍精度。
+#### src_c ディレクトリ
+シンプルなC言語コード、CPU(OpenMP含む)向け、倍精度。
 
 #### src_cpp ディレクトリ
 C++コード、CPU(OpenMP)とGPU(CUDA)、単精度と倍精度それぞれで計算。
+論文でやったパラメタチューニング的なものは適用していない。（コードが長くて複雑になるのでどうしようかなぁ。）
+
 Makefile.gnuを使ってmake(make -f Makefile.gnu)するとhmvm_gpuまたはhmvm_cpuが生成される。
 src_hdumpのbem-bb-SCM.outで出力したhmatrix_0.binを使って
 ./hmvm_gpu ./hmatrix_0.bin
