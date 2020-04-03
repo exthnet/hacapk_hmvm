@@ -125,7 +125,7 @@ contains
     lpmd => st_ctl%lpmd(:); lnp(0:) => st_ctl%lnp; lsp(0:) => st_ctl%lsp;lthr(0:) => st_ctl%lthr;lod => st_ctl%lod(:); param=>st_ctl%param(:)
     mpinr=lpmd(3); icomm=lpmd(1); nthr=lpmd(20)
     param(91)=ztol
-    if(st_ctl%param(1)>0 .and. mpinr==0) print*,'HACApK_solve start'
+    if(st_ctl%param(1)>0 .and. mpinr==0) print*,'HACApK_hdump_solve start'
     nofc=st_bemv%nd
     nffc=1
     nd=nofc*nffc

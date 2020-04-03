@@ -145,7 +145,9 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	BENCH(hmvm_cuda_seq<T>,1,1,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
+
   // block parallel
+  // whole hmvm calculation in 1 GPU kernel
   if(kernel==1)
   {
 	int a1, a2;
@@ -157,6 +159,22 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	EXEC(hmvm_cuda_block<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
 	BENCH(hmvm_cuda_block<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1blk%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+  }
+
+  // block & thread parallel
+  // whole hmvm calculation in 1 GPU kernel
+  // under development
+  if(kernel==2)
+  {
+	int a1, a2;
+	char name[8], fname[32];
+	a1=a2=0;
+	snprintf(name,8,"_%d_%d",a1,a2);
+	snprintf(fname,32,"result_cuda1hyb%s_%s.txt", name, typeid(T).name());
+	printf("fname = %s\n", fname);
+	//EXEC(hmvm_cuda_hybrid<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
+	//BENCH(hmvm_cuda_hybrid<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
+	printf("TIME %d hmvm_cuda1hyb%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########
