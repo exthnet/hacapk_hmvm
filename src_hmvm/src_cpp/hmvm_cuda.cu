@@ -9,28 +9,6 @@
 #include "hacapk_cpp.hpp"
 #include "hmvm_cuda_kernels.cu"
 
-template <class T>
-__global__ void hmvm_cudaD_kernel000000
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat, int ndense, int *dense);
-
-template <class T>
-__global__ void hmvm_cudaD
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-
-template <class T>
-__global__ void hmvm_cudaD_block
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-
-template <class T, int div>
-__global__ void hmvm_cudaD_kernel00dd00
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat, int ndense, int *dense);
-
 #define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
 
 template<class T>
@@ -127,20 +105,22 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   printf("nd = %d\n", nd);												\
   cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
   cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
-  FUNCNAME<<<B,T,S>>> \
-  (d_v, d_b, d_sm.nlf, d_sm.ktmax, d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, \
-   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);					\
+  FUNCNAME<<<B,T,S>>>													\
+	(d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
+	 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,			\
+	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
+	 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
   cudaDeviceSynchronize();												\
-  cudaMemcpy(v, d_v, sizeof(T)*nd, cudaMemcpyDeviceToHost);		\
-  printf("write to %s\n", fname);												\
+  cudaMemcpy(v, d_v, sizeof(T)*nd, cudaMemcpyDeviceToHost);				\
+  printf("write to %s\n", fname);										\
   F = fopen(fname, "w");												\
-  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);							\
+  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);							\
   fclose(F);
 
 #if 0
-  hmvm_cudaD<<<1,1,d_sm.ktmax*sizeof(T)>>>							\
-  (d_v, d_b, d_sm.nlf, d_sm.ktmax, d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, \
-   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);					\
+	hmvm_cudaD<<<1,1,d_sm.ktmax*sizeof(T)>>>							\
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax, d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, \
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
 
 #endif
 
@@ -163,30 +143,32 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   davg1 /= (M+L);         davg2 /= L;
 #endif
 
+  // sequential
   if(kernel==0)
   {
 	int a1, a2;
-	char name[8], fname[32];
+	char name[8], fname[0xff];
 	a1=a2=0;
 	snprintf(name,8,"_%d_%d",a1,a2);
-	snprintf(fname,32,"hmvm_cuda1%s_%s.txt", name, typeid(T).name());
+	snprintf(fname,32,"result_cuda1%s_%s.txt", name, typeid(T).name());
 	printf("fname = %s\n", fname);
-	BENCH(hmvm_cudaD,1,1,d_sm.ktmax*sizeof(T));
+	BENCH(hmvm_cuda_seq<T>,1,1,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1%s min %e max %e avg1 %e avg2 %e |", M+L, name, dmin, dmax, davg1, davg2);
-	for(i=0;i<M+L;i++)printf(" %e", dtimes[i]);
+	for(i=0;i<M+L;i++)printf(" %.3E", dtimes[i]);
 	printf("\n");
   }
+  // block parallel
   if(kernel==1)
   {
 	int a1, a2;
 	char name[8], fname[32];
 	a1=a2=0;
 	snprintf(name,8,"_%d_%d",a1,a2);
-	snprintf(fname,32,"hmvm_cuda1blk%s_%s.txt", name, typeid(T).name());
+	snprintf(fname,32,"result_cuda1blk%s_%s.txt", name, typeid(T).name());
 	printf("fname = %s\n", fname);
-	BENCH(hmvm_cudaD_block,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(double));
+	BENCH(hmvm_cuda_block<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1%s min %e max %e avg1 %e avg2 %e |", M+L, name, dmin, dmax, davg1, davg2);
-	for(i=0;i<M+L;i++)printf(" %e", dtimes[i]);
+	for(i=0;i<M+L;i++)printf(" %.3E", dtimes[i]);
 	printf("\n");
   }
 
@@ -210,3 +192,6 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   //free(v); free(tmp); free(zero);
   printf("hmvm_cuda1: end\n");
 }
+
+template void hmvm_cuda1<float>(matrix2<float> mat2, float *b, int kernel, int dump_result);
+template void hmvm_cuda1<double>(matrix2<double> mat2, double *b, int kernel, int dump_result);

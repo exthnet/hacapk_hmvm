@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <typeinfo>
 #include <omp.h>
+
+#include "hacapk_cpp.hpp"
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_1(T *v, matrix<T> mat, T *b)
+void hmvm_seq_1(T *v, struct matrix<T> mat, T *b)
 {
   int i, j;
   T *tmp;
@@ -59,7 +60,7 @@ void hmvm_seq_1(T *v, matrix<T> mat, T *b)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_1t(T *v, matrix<T> mat, T *b)
+void hmvm_seq_1t(T *v, struct matrix<T> mat, T *b)
 {
   int i, j;
   T *tmp;
@@ -112,7 +113,7 @@ void hmvm_seq_1t(T *v, matrix<T> mat, T *b)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_2(T *v, matrix2<T> mat, T *b)
+void hmvm_seq_2(T *v, struct matrix2<T> mat, T *b)
 {
   int i, j;
   T *tmp;
@@ -169,7 +170,7 @@ void hmvm_seq_2(T *v, matrix2<T> mat, T *b)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_2t(T *v, matrix2<T> mat, T *b)
+void hmvm_seq_2t(T *v, struct matrix2<T> mat, T *b)
 {
   int i, j;
   T *tmp;
@@ -227,73 +228,61 @@ void hmvm_seq_2t(T *v, matrix2<T> mat, T *b)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
+void hmvm_seq(struct matrix<T> mat, struct matrix2<T> mat2, T *b)
 {
   int i, nd=mat.nd;
-  char fname[0xff];
   FILE *F;
   T *v=NULL;
-  printf("hmvm_seq_%s: begin\n", typeid(T).name());
+  printf("hmvm_seq: begin\n");
   v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
   printf("hmvm_seq_1\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_1(v, mat, b);
-  if(dump_result){
-	snprintf(fname, 0xff, "result_seq_1_%s.txt", typeid(T).name());
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }
+  F = fopen("seq_1.txt", "w");
+  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+  fclose(F);
 
   // hmvm (loop interchanged)
   printf("hmvm_seq_1t\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_1t(v, mat, b);
-  if(dump_result){
-	snprintf(fname, 0xff, "result_seq_1t_%s.txt", typeid(T).name());
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }
+  F = fopen("seq_1t.txt", "w");
+  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+  fclose(F);
 
   // hmvm using rowmat array
   printf("hmvm_seq_2\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_2(v, mat2, b);
-  if(dump_result){
-	snprintf(fname, 0xff, "result_seq_2_%s.txt", typeid(T).name());
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }
+  F = fopen("seq_2.txt", "w");
+  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+  fclose(F);
 
   // hmvm using rowmat array (loop interchanged)
   printf("hmvm_seq_2t\n");
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_seq_2t(v, mat2, b);
-  if(dump_result){
-	snprintf(fname, 0xff, "result_seq_2t_%s.txt", typeid(T).name());
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }
+  F = fopen("seq_2t.txt", "w");
+  for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+  fclose(F);
 
   free(v);
 
-  printf("hmvm_seq_%s: end\n", typeid(T).name());
+  printf("hmvm_seq: end\n");
 }
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
+void hmvm_seq_bench(struct matrix<T> mat, struct matrix2<T> mat2, T *b)
 {
   const int L=10;
   int i, l, nd=mat.nd;
+  FILE *F;
   double d1, d2, dtimes[L], dmin, dmax, davg;
   T *v=NULL;
-  printf("hmvm_seq_%s_bench: begin\n", typeid(T).name());
+  printf("hmvm_seq_bench: begin\n");
   v=(T*)malloc(sizeof(T)*nd);
 
   // hmvm
@@ -306,6 +295,9 @@ void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
+	F = fopen("seq_1.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -328,6 +320,9 @@ void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
+	F = fopen("seq_1t.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -350,6 +345,9 @@ void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
+	F = fopen("seq_2.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -372,6 +370,9 @@ void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
+	F = fopen("seq_2t.txt", "w");
+	for(i=0;i<nd;i++)fprintf(F, "%E\n", v[i]);
+	fclose(F);
 	dmin = 9999.99;
 	dmax = 0.0;
 	davg = 0.0;
@@ -386,5 +387,5 @@ void hmvm_seq_bench(matrix<T> mat, matrix2<T> mat2, T *b)
 
   free(v);
 
-  printf("hmvm_seq_%s_bench: end\n", typeid(T).name());
+  printf("hmvm_seq_bench: end\n");
 }

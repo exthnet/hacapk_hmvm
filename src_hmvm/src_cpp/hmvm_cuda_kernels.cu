@@ -5,6 +5,32 @@
 #include <omp.h>
 #include <cuda_runtime_api.h>
 
+#if __CUDA_ARCH__ < 600
+__device__ double myAtomicAdd(double* address, double val)
+{
+  unsigned long long int* address_as_ull =
+	(unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+
+  do {
+	assumed = old;
+	old = atomicCAS(address_as_ull, assumed,
+					__double_as_longlong(val +
+										 __longlong_as_double(assumed)));
+
+	// Note: uses integer comparison to avoid hang in case of NaN (since NaN != NaN)
+  } while (assumed != old);
+
+  return __longlong_as_double(old);
+}
+__device__ float myAtomicAdd(float* address, float val)
+{
+  atomicAdd(address, val);
+}
+#else
+#define myAtomicAdd atomicAdd
+#endif
+
 // ######## ######## ######## ######## ######## ######## ######## ########
 // 0: 完全逐次
 
@@ -43,7 +69,7 @@ __global__ void hmvm_cudaD_dense
 		itl=it+il*ndt;
 		tmp += rowmat[head+itl]*d_zu[itt];
 	  }
-	  atomicAdd(&d_zaut[ill], tmp);
+	  myAtomicAdd(&d_zaut[ill], tmp);
 	}
   }
 #if _DEBUG_LEVEL >= 2
@@ -52,7 +78,7 @@ __global__ void hmvm_cudaD_dense
 }
 
 template <class T>
-__global__ void hmvm_cudaD
+__global__ void hmvm_cuda_seq
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
  int napprox, int *approx, int ndense, int *dense)
@@ -64,7 +90,9 @@ __global__ void hmvm_cudaD
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
   T tmp;
-  extern __shared__ T tmp2[];
+  //extern __shared__ T tmp2[];
+  extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
+  T *tmp2 = reinterpret_cast<T *>(my_smem);
   int i;
 
   // approx
@@ -93,7 +121,7 @@ __global__ void hmvm_cudaD
 	  for(it=0; it<ndl; it++){
 		ill=it+nstrtl-1;
 		itl=it+il*ndl;
-		atomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
 	  }
 	}
   }
@@ -117,7 +145,7 @@ __global__ void hmvm_cudaD
 		itl=it+il*ndt;
 		tmp += rowmat[head+itl]*d_zu[itt];
 	  }
-	  atomicAdd(&d_zaut[ill], tmp);
+	  myAtomicAdd(&d_zaut[ill], tmp);
 	}
   }
 #if _DEBUG_LEVEL >= 2
@@ -174,7 +202,7 @@ __global__ void hmvm_cudaD_kernel00dd00
 	  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down(tmp, offset);
 	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(tmp, offset, warpSize);
 	  if(xid==0){
-		atomicAdd(&d_zaut[ill], tmp);
+		myAtomicAdd(&d_zaut[ill], tmp);
 	  }
 	}
   }
@@ -185,7 +213,7 @@ __global__ void hmvm_cudaD_kernel00dd00
 #endif
 
 template <class T>
-__global__ void hmvm_cudaD_block
+__global__ void hmvm_cuda_block
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
  int napprox, int *approx, int ndense, int *dense)
@@ -197,7 +225,9 @@ __global__ void hmvm_cudaD_block
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
   T tmp;
-  extern __shared__ T tmp2[];
+  //extern __shared__ T tmp2[];
+  extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
+  T *tmp2 = reinterpret_cast<T *>(my_smem);
   int i;
 
   // approx
@@ -227,7 +257,7 @@ __global__ void hmvm_cudaD_block
 	  for(it=0; it<ndl; it++){
 		ill=it+nstrtl-1;
 		itl=it+il*ndl;
-		atomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
 	  }
 	}
   }else{
@@ -251,7 +281,7 @@ __global__ void hmvm_cudaD_block
 		itl=it+il*ndt;
 		tmp += rowmat[head+itl]*d_zu[itt];
 	  }
-	  atomicAdd(&d_zaut[ill], tmp);
+	  myAtomicAdd(&d_zaut[ill], tmp);
 	}
   }
 #if _DEBUG_LEVEL >= 2

@@ -23,5 +23,11 @@ src_hdumpで出力したバイナリファイルを用いてH行列ベクトル�
 - src_cpp
 C++コード、CPU(OpenMP)とGPU(CUDA)、単精度と倍精度。
 実装(移植)中。
-
+-- Makefile.gnu
+-- loadmatrix.cpp
+-- hmvm.cpp
+-- hmvm_cuda.cpp
+-- hacapk_cpp.hpp
+-- hmvm_seq.hpp
+-- hmavm_omp.hpp
 

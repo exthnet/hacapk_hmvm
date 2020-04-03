@@ -1,31 +1,40 @@
 # -*- makefile -*-
 
 CPP  = g++ -std=c++11
-CCFLAGS  += -O3 -fopenmp
-
+CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
+NVCC = /usr/local/cuda/bin/nvcc
+NVCCFLAGS = -Xcompiler "-O3 -fopenmp" \
+--generate-code arch=compute_53,code=sm_53 \
+--generate-code arch=compute_60,code=sm_60 \
+--generate-code arch=compute_70,code=sm_70
+# 53=JetsonTX1, 60=Pascal, 70=Volta
 
 ######################
 # Object files
 OBJS  = loadmatrix.o hmvm.o
+CUOBJS = hmvm_cuda.o
 HOBJS = hacapk_cpp.hpp hmvm_seq.hpp hmvm_omp.hpp
 
 ######################
 # Compile cmmands
 .SUFFIXES:
 .SUFFIXES: .o .cpp
+.SUFFIXES: .o .cu
 
 $(TARGET): $(OBJS)
 	$(LINK) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
-.cpp.o: *.cpp
+.cpp.o: *.cpp $(HOBJS)
 	$(CPP) -c $(CCFLAGS)  $(INCS) $<
-.f90.o: *.f90
-	$(F90) -c $(F90FLAGS) $(INCS) $<
+.cu.o: *.cu
+	$(NVCC) -c $(NVCCFLAGS) $(INCS) $<
 
 all: hmvm_cpu
 
 hmvm_cpu: $(OBJS) $(HOBJS)
 	$(CPP) -o hmvm_cpu $(OBJS) -lm $(CCFLAGS)
+hmvm_gpu: $(OBJS) $(HOBJS) $(CUOBJS)
+	$(NVCC) -o hmvm_gpu $(OBJS) $(CUOBJS) -lm $(NVCCFLAGS)
 
 clean:
 	rm -f *.o *.mod *~

@@ -308,7 +308,7 @@ void hmvm_omp(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1(v, mat, b);
   if(dump_result){
-	snprintf(fname, 0xff, "omp_1_%s.txt", typeid(T).name());
+	snprintf(fname, 0xff, "result_omp_1_%s.txt", typeid(T).name());
 	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
@@ -319,7 +319,7 @@ void hmvm_omp(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_1t(v, mat, b);
   if(dump_result){
-	snprintf(fname, 0xff, "omp_1t_%s.txt", typeid(T).name());
+	snprintf(fname, 0xff, "result_omp_1t_%s.txt", typeid(T).name());
 	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
@@ -330,7 +330,7 @@ void hmvm_omp(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2(v, mat2, b);
   if(dump_result){
-	snprintf(fname, 0xff, "omp_2_%s.txt", typeid(T).name());
+	snprintf(fname, 0xff, "result_omp_2_%s.txt", typeid(T).name());
 	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
@@ -341,7 +341,7 @@ void hmvm_omp(matrix<T> mat, matrix2<T> mat2, T *b, int dump_result)
   for(i=0;i<nd;i++)v[i] = 0.0;
   hmvm_omp_2t(v, mat2, b);
   if(dump_result){
-	snprintf(fname, 0xff, "omp_2t_%s.txt", typeid(T).name());
+	snprintf(fname, 0xff, "result_omp_2t_%s.txt", typeid(T).name());
 	F = fopen(fname, "w");
 	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);

@@ -6,6 +6,7 @@
 #include "hacapk_cpp.hpp"
 #include "hmvm_seq.hpp"
 #include "hmvm_omp.hpp"
+#include "hmvm_cuda.h"
 
 int main(int argc, char **argv)
 {
@@ -104,6 +105,11 @@ int main(int argc, char **argv)
   // OpenMP
   hmvm_omp<float>(matF, matF2, fb, dump_result);
   hmvm_omp_bench<float>(matF, matF2, fb);
+  // CUDA
+#ifdef _USE_CUDA
+  hmvm_cuda1(matF2, fb, 0, dump_result);
+  hmvm_cuda1(matF2, fb, 1, dump_result);
+#endif
   delete [] fb;//free(fb);
 
   return 0;
