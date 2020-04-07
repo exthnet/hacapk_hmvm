@@ -11,6 +11,29 @@
 
 #define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
 
+/*
+template <class T, int div>
+void proxy_hmvm_cuda_hybrid1
+(int B, int T, int S
+double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+ int napprox, int *approx, int ndense, int *dense)
+{
+  switch(div){
+  case 1:
+	hmvm_cuda_hybrid1<T,1><<<d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T)>>>
+	  (d_zaut, d_zu, nlf, ktmax,
+	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt, a1, a2, rowmat,
+	   napprox, approx, ndense, dense);
+	break;
+  case 2:
+	break;
+  case 3:
+	break;
+  }
+}
+*/
+
 template<class T>
 void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 {
@@ -161,6 +184,22 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	printf("TIME %d hmvm_cuda1blk%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
+#define EXEC_1(FUNCNAME,BK,TH,S)											\
+  printf("nd = %d\n", nd);												\
+  cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
+  cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice);				\
+  FUNCNAME<T,1><<<BK,TH,S>>>												\
+	(d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
+	 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,			\
+	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
+	 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
+  cudaDeviceSynchronize();												\
+  cudaMemcpy(v, d_v, sizeof(T)*nd, cudaMemcpyDeviceToHost);				\
+  printf("write to %s\n", fname);										\
+  F = fopen(fname, "w");												\
+  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);							\
+  fclose(F);
+
   // block & thread parallel
   // whole hmvm calculation in 1 GPU kernel
   // under development
@@ -172,7 +211,14 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
 	snprintf(name,8,"_%d_%d",a1,a2);
 	snprintf(fname,32,"result_cuda1hyb%s_%s.txt", name, typeid(T).name());
 	printf("fname = %s\n", fname);
-	//EXEC(hmvm_cuda_hybrid<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
+	EXEC_1(hmvm_cuda_hybrid1,d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
+	/*
+	proxy_hmvm_cuda_hybrid1<T,1><<<d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T)>>>
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);
+	*/
 	//BENCH(hmvm_cuda_hybrid<T>,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1hyb%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
@@ -198,5 +244,9 @@ void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel, int dump_result)
   printf("hmvm_cuda1: end\n");
 }
 
+
+// ######## ######## ######## ######## ######## ######## ######## ########
+// template関数の実体化のための宣言
+// ######## ######## ######## ######## ######## ######## ######## ########
 template void hmvm_cuda1<float>(matrix2<float> mat2, float *b, int kernel, int dump_result);
 template void hmvm_cuda1<double>(matrix2<double> mat2, double *b, int kernel, int dump_result);

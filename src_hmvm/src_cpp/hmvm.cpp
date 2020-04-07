@@ -84,6 +84,7 @@ int main(int argc, char **argv)
 #ifdef _USE_CUDA
   hmvm_cuda1(matD2, b, 0, dump_result);
   hmvm_cuda1(matD2, b, 1, dump_result);
+  hmvm_cuda1(matD2, b, 2, dump_result);
 #endif
   delete [] b;//free(b);
 
@@ -109,6 +110,7 @@ int main(int argc, char **argv)
 #ifdef _USE_CUDA
   hmvm_cuda1(matF2, fb, 0, dump_result);
   hmvm_cuda1(matF2, fb, 1, dump_result);
+  hmvm_cuda1(matF2, fb, 2, dump_result);
 #endif
   delete [] fb;//free(fb);
 
