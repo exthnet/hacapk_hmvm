@@ -6,7 +6,8 @@ CCFLAGS  += -O3 -qopenmp -mkl
 
 ######################
 # Object files
-OBJS  = loadmatrix.o hmvm.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
+OBJS1  = loadmatrix.o hmvm1.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
+OBJS2  = loadmatrix.o hmvm2.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
 
 
 ######################
@@ -21,10 +22,12 @@ $(TARGET): $(OBJS)
 .f90.o: *.f90
 	$(F90) -c $(F90FLAGS) $(INCS) $<
 
-all: hmvm_cpu
+all: hmvm_cpu1 hmvm_cpu2
 
-hmvm_cpu: $(OBJS)
-	$(CC) -o hmvm_cpu $(OBJS) -lm $(CCFLAGS)
+hmvm_cpu1: $(OBJS1)
+	$(CC) -o hmvm_cpu1 $(OBJS1) -lm $(CCFLAGS)
+hmvm_cpu2: $(OBJS2)
+	$(CC) -o hmvm_cpu2 $(OBJS2) -lm $(CCFLAGS)
 
 clean:
 	rm -f *.o *.mod *~

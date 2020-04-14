@@ -131,6 +131,105 @@ int loadmatrix(const char *fname, matrix *mat, matrix2 *mat2)
   return 0;
 }
 
+int loadmatrix2(const char *fname, matrix2 *mat2)
+{
+  int i;
+  FILE *F;
+  int irecord;
+  int nd, nlf, ktmax, len, offset;
+  printf("loadmatrix: begin\n"); fflush(stdout);
+  F = fopen(fname, "r");
+  if(F==NULL){
+	printf("fopen %s failed\n", fname);
+	return -1;
+  }
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&nd, sizeof(int), 1, F);
+  fread(&nlf, sizeof(int), 1, F);
+  fread(&ktmax, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  printf("nd =  %d\n", nd);
+  printf("nlf = %d\n", nlf);
+  printf("ktmax = %d\n", ktmax);
+  mat2->nd = nd;
+  mat2->nlf = nlf;
+  mat2->ktmax = ktmax;
+
+  printf("loadmatrix: make matrix2\n"); fflush(stdout);
+  mat2->ltmtx = (int*)malloc(sizeof(int)*nlf);
+  mat2->kt = (int*)malloc(sizeof(int)*nlf);
+  mat2->ndl = (int*)malloc(sizeof(int)*nlf);
+  mat2->ndt = (int*)malloc(sizeof(int)*nlf);
+  mat2->nstrtl = (int*)malloc(sizeof(int)*nlf);
+  mat2->nstrtt = (int*)malloc(sizeof(int)*nlf);
+  mat2->a1 = (int*)malloc(sizeof(int)*nlf);
+  mat2->a2 = (int*)malloc(sizeof(int)*nlf);
+
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ltmtx, sizeof(int), nlf, F); printf("ltmtx %d\n", mat2->ltmtx[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ndl, sizeof(int), nlf, F); printf("ndl %d\n", mat2->ndl[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ndt, sizeof(int), nlf, F); printf("ndt %d\n", mat2->ndt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->nstrtl, sizeof(int), nlf, F); printf("nstrtl %d\n", mat2->nstrtl[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->nstrtt, sizeof(int), nlf, F); printf("nstrtt %d\n", mat2->nstrtt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->kt, sizeof(int), nlf, F); printf("kt %d\n", mat2->kt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&len, sizeof(int), 1, F); printf("len %d\n", len); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+
+  mat2->rowmat = (double*)malloc(sizeof(double)*len);
+  mat2->rowmat_t = (double*)malloc(sizeof(double)*len);
+
+  offset = 0;
+  for(i=0;i<nlf;i++){
+	int ltmtx = mat2->ltmtx[i];
+	if(ltmtx==1){
+	  mat2->a1[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndt[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->kt[i]*mat2->ndt[i]);
+	  offset += mat2->kt[i]*mat2->ndt[i];
+	  mat2->a2[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndl[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  //memcpy(&mat2->rowmat_t[offset], mat->submat[i].a2t, sizeof(double)*mat->submat[i].kt*mat->submat[i].ndl);
+	  int x, y;
+	  int kt = mat2->kt[i];
+	  int ndl = mat2->ndl[i];
+	  for(y=0;y<kt;y++){
+		for(x=0;x<ndl;x++){
+		  mat2->rowmat_t[offset+y+x*kt] = mat2->rowmat[offset+y*ndl+x];
+		}
+	  }
+	  offset += mat2->kt[i]*mat2->ndl[i];
+	}else{
+	  mat2->a1[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->ndl[i]*mat2->ndt[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->ndl[i]*mat2->ndt[i]);
+	  offset += mat2->ndl[i]*mat2->ndt[i];
+	  mat2->a2[i] = 0;
+	}
+  }
+  mat2->len = offset;
+
+  printf("loadmatrix2: end\n"); fflush(stdout);
+  return 0;
+}
+
 double frand(double d)
 {
   return d*(rand()%1000)/1000.0;

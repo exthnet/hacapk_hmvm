@@ -32,36 +32,26 @@ typedef struct matrix2{
 
 // setup matrix
 int loadmatrix(const char *fname, matrix*, matrix2*);
+int loadmatrix2(const char *fname, matrix2*);
 int dummymatrix(matrix *mat, matrix2 *mat2, int ndl, int ndt, int n);
 
 // seq
-void hmvm_seq(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_seq_bench(matrix mat, matrix2 mat2, double *b);
+void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_seq_bench(matrix *mat, matrix2 *mat2, double *b);
 // omp
-void hmvm_omp(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_omp_bench(matrix mat, matrix2 mat2, double *b);
+void hmvm_omp(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_omp_bench(matrix *mat, matrix2 *mat2, double *b);
 
 // mkl
 #ifdef __INTEL_COMPILER
-void hmvm_blas_p(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_blas_p_bench(matrix mat, matrix2 mat2, double *b);
-void hmvm_blas_s(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_blas_s_bench(matrix mat, matrix2 mat2, double *b);
-void hmvm_cblas_p(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_cblas_p_bench(matrix mat, matrix2 mat2, double *b);
-void hmvm_cblas_s(matrix mat, matrix2 mat2, double *b, int dump_result);
-void hmvm_cblas_s_bench(matrix mat, matrix2 mat2, double *b);
-#endif
-
-// cuda
-#ifdef _USE_CUDA
-#ifdef __cplusplus
-extern "C"{
-#endif
-  void hmvm_cuda1(matrix2 mat2, double *b, int kernel, int dump_result);
-#ifdef __cplusplus
-}
-#endif
+void hmvm_blas_p(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_blas_p_bench(matrix *mat, matrix2 *mat2, double *b);
+void hmvm_blas_s(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_blas_s_bench(matrix *mat, matrix2 *mat2, double *b);
+void hmvm_cblas_p(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_cblas_p_bench(matrix *mat, matrix2 *mat2, double *b);
+void hmvm_cblas_s(matrix *mat, matrix2 *mat2, double *b, int dump_result);
+void hmvm_cblas_s_bench(matrix *mat, matrix2 *mat2, double *b);
 #endif
 
 #endif
