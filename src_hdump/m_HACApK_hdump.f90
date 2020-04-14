@@ -68,7 +68,9 @@ contains
     write(*,*)"HACApK_info_leafmtx: end"
   end subroutine HACApK_info_leafmtx
 
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   ! write hmatrix to file
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
     implicit none
     type(st_HACApK_leafmtxp) :: st_leafmtxp
@@ -105,7 +107,82 @@ contains
     write(*,*)"HACApK_hdump_dump_leafmtx: end"
   end subroutine HACApK_hdump_dump_leafmtx
 
+  ! ######## ######## ######## ######## ######## ######## ######## ########
+  ! write hmatrix to file
+  ! ######## ######## ######## ######## ######## ######## ######## ########
+  subroutine HACApK_hdump_dump_leafmtx2(st_leafmtxp,st_ctl,mpinr)
+    implicit none
+    type(st_HACApK_leafmtxp) :: st_leafmtxp
+    type(st_HACApK_lcontrol) :: st_ctl
+    integer :: mpinr
+    integer*4 :: nd,nlf,ktmax,ip,ltmtx,kt,ndl,ndt,nstrtl,nstrtt,ierr, len
+    character*32 :: fname
+    integer*4,dimension(:),allocatable :: buf
+
+    write(*,*)"HACApK_hdump_dump_leafmtx2: begin"
+
+    write(fname,'(a,i0,a)')'hmatrix_',mpinr,'2.bin'
+    write(*,*)"file dump to ",fname
+    nd=st_leafmtxp%nd; nlf=st_leafmtxp%nlf; ktmax=st_leafmtxp%ktmax
+    open( 11, file=fname, action='write', iostat=ierr, form="unformatted" )
+
+    ! for debug, dump only first 2 leavs
+    !    write(11) nd,1,ktmax
+    !    do ip=1,2
+    allocate(buf(nlf))
+
+    write(11) nd,nlf,ktmax
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%ltmtx
+    enddo
+    write(11) buf
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%ndl
+    enddo
+    write(11) buf
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%ndt
+    enddo
+    write(11) buf
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%nstrtl
+    enddo
+    write(11) buf
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%nstrtt
+    enddo
+    write(11) buf
+    do ip=1,nlf
+       buf(ip) =st_leafmtxp%st_lf(ip)%kt
+    enddo
+    write(11) buf
+    len = 0
+    do ip=1,nlf
+       ltmtx=st_leafmtxp%st_lf(ip)%ltmtx
+       if(ltmtx==1)then ! Low-rank matrix
+          len = len + st_leafmtxp%st_lf(ip)%ndt * st_leafmtxp%st_lf(ip)%kt
+          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%kt
+       elseif(ltmtx==2)then ! Dense matrix
+          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%ndt
+       endif
+    enddo
+    write(11) len
+    do ip=1,nlf
+       ltmtx=st_leafmtxp%st_lf(ip)%ltmtx
+       if(ltmtx==1)then ! Low-rank matrix
+          write(11)st_leafmtxp%st_lf(ip)%a1
+          write(11)st_leafmtxp%st_lf(ip)%a2
+       elseif(ltmtx==2)then ! Dense matrix
+          write(11)st_leafmtxp%st_lf(ip)%a1
+       endif
+    enddo
+    close( 11 )
+    write(*,*)"HACApK_hdump_dump_leafmtx2: end"
+  end subroutine HACApK_hdump_dump_leafmtx2
+
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   ! modified solve function
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump_solve(st_leafmtxp,st_bemv,st_ctl,rhs,sol,ztol)
     implicit none
     include 'mpif.h'
@@ -153,10 +230,13 @@ contains
        print*,'HACApK_dump_leafmtx'
        st_leafmtxp%nd = nd
        call HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
+       call HACApK_hdump_dump_leafmtx2(st_leafmtxp,st_ctl,mpinr)
     end if
   end subroutine HACApK_hdump_solve
 
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   ! hdump (modified gensolv function)
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump(st_leafmtxp,st_bemv,st_ctl,gmid,rhs,sol,ztol)
     implicit none
     include 'mpif.h'
