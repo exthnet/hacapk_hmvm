@@ -228,6 +228,7 @@ __global__ void hmvm_cuda_hybrid1
   T *tmp2 = reinterpret_cast<T *>(my_smem);
 
   if(gid<napprox){
+#if 0
 	// approx
 	ip = approx[gid];
 	ndl = _ndl[ip];
@@ -256,7 +257,9 @@ __global__ void hmvm_cuda_hybrid1
 		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
 	  }
 	}
+#endif
   }else{
+#if 1
 	// dense
 	ip = dense[gid-napprox];
 	ndl = _ndl[ip];
@@ -282,6 +285,7 @@ __global__ void hmvm_cuda_hybrid1
 		myAtomicAdd(&d_zaut[ill], tmp);
 	  }
 	}
+#endif
   }
 
 #if _DEBUG_LEVEL >= 2

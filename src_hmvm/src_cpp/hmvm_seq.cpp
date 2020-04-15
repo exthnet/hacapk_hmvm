@@ -27,6 +27,7 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 	nstrtt = mat->submat[i].nstrtt;
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
+#if 0
 	  for(j=0;j<kt;j++)tmp[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
@@ -42,7 +43,9 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 		  v[ill] += mat->submat[i].a2[itl] * tmp[il];
 		}
 	  }
+#endif
 	}else{
+#if 1
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
 		for(it=0;it<ndt;it++){
@@ -52,6 +55,7 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 		}
 	  }
 	}
+#endif
   }
   free(tmp);
 #if _DEBUG_LEVEL >= 1
