@@ -131,85 +131,194 @@ int loadHmatrix(const char *fname, matrix<double> *mat, matrix2<double> *mat2)
   return 0;
 }
 
-int convertD2F(matrix<float> *matF, matrix2<float> *matF2, matrix<double> matD, matrix2<double> matD2)
+int loadHmatrix2(const char *fname, matrix2<double> *mat2)
+{
+  int i;
+  FILE *F;
+  int irecord;
+  int nd, nlf, ktmax, len, offset;
+  printf("loadHmatrix: begin\n"); fflush(stdout);
+  F = fopen(fname, "r");
+  if(F==NULL){
+	printf("fopen %s failed\n", fname);
+	return -1;
+  }
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&nd, sizeof(int), 1, F);
+  fread(&nlf, sizeof(int), 1, F);
+  fread(&ktmax, sizeof(int), 1, F);
+  fread(&len, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  printf("nd    = %d\n", nd);
+  printf("nlf   = %d\n", nlf);
+  printf("ktmax = %d\n", ktmax);
+  printf("len   = %d\n", len);
+  fflush(stdout);
+  mat2->nd = nd;
+  mat2->nlf = nlf;
+  mat2->ktmax = ktmax;
+  mat2->len = len;
+
+  printf("loadHmatrix: make matrix2\n"); fflush(stdout);
+  mat2->ltmtx = (int*)malloc(sizeof(int)*nlf);
+  mat2->kt = (int*)malloc(sizeof(int)*nlf);
+  mat2->ndl = (int*)malloc(sizeof(int)*nlf);
+  mat2->ndt = (int*)malloc(sizeof(int)*nlf);
+  mat2->nstrtl = (int*)malloc(sizeof(int)*nlf);
+  mat2->nstrtt = (int*)malloc(sizeof(int)*nlf);
+  mat2->a1 = (int*)malloc(sizeof(int)*nlf);
+  mat2->a2 = (int*)malloc(sizeof(int)*nlf);
+
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ltmtx, sizeof(int), nlf, F); printf("ltmtx %d\n", mat2->ltmtx[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ndl, sizeof(int), nlf, F); printf("ndl %d\n", mat2->ndl[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->ndt, sizeof(int), nlf, F); printf("ndt %d\n", mat2->ndt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->nstrtl, sizeof(int), nlf, F); printf("nstrtl %d\n", mat2->nstrtl[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->nstrtt, sizeof(int), nlf, F); printf("nstrtt %d\n", mat2->nstrtt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(&irecord, sizeof(int), 1, F);
+  fread(mat2->kt, sizeof(int), nlf, F); printf("kt %d\n", mat2->kt[0]); fflush(stdout);
+  fread(&irecord, sizeof(int), 1, F);
+
+  mat2->rowmat = (double*)malloc(sizeof(double)*len);
+  mat2->rowmat_t = (double*)malloc(sizeof(double)*len);
+
+  offset = 0;
+  for(i=0;i<nlf;i++){
+	int ltmtx = mat2->ltmtx[i];
+	if(ltmtx==1){
+	  mat2->a1[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndt[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->kt[i]*mat2->ndt[i]);
+	  offset += mat2->kt[i]*mat2->ndt[i];
+	  mat2->a2[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndl[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  //memcpy(&mat2->rowmat_t[offset], mat->submat[i].a2t, sizeof(double)*mat->submat[i].kt*mat->submat[i].ndl);
+	  int x, y;
+	  int kt = mat2->kt[i];
+	  int ndl = mat2->ndl[i];
+	  for(y=0;y<kt;y++){
+		for(x=0;x<ndl;x++){
+		  mat2->rowmat_t[offset+y+x*kt] = mat2->rowmat[offset+y*ndl+x];
+		}
+	  }
+	  offset += mat2->kt[i]*mat2->ndl[i];
+	}else{
+	  mat2->a1[i] = offset;
+	  fread(&irecord, sizeof(int), 1, F);
+	  fread(&mat2->rowmat[offset], sizeof(double), mat2->ndl[i]*mat2->ndt[i], F);
+	  fread(&irecord, sizeof(int), 1, F);
+	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->ndl[i]*mat2->ndt[i]);
+	  offset += mat2->ndl[i]*mat2->ndt[i];
+	  mat2->a2[i] = 0;
+	}
+  }
+  printf("check len: %d %d\n", mat2->len, offset);
+
+  printf("loadHmatrix2: end\n"); fflush(stdout);
+  return 0;
+}
+
+int convertD2F(matrix<float> *matF, matrix2<float> *matF2, const matrix<double> *matD, const matrix2<double> *matD2)
 {
   int i, j;
-  int len, offset;
-  matF->nd     = matD.nd;
-  matF->nlf    = matD.nlf;
-  matF->ktmax  = matD.ktmax;
-  matF->submat = new submatrix<float>[matF->nlf]; //(submatrix<float>*)malloc(sizeof(submatrix<float>)*matF->nlf);
-  len = 0;
-  for(i=0;i<matF->nlf;i++){
-	matF->submat[i].ltmtx = matD.submat[i].ltmtx;
-	matF->submat[i].ndl    = matD.submat[i].ndl;
-	matF->submat[i].ndt    = matD.submat[i].ndt;
-	matF->submat[i].nstrtl = matD.submat[i].nstrtl;
-	matF->submat[i].nstrtt = matD.submat[i].nstrtt;
-	matF->submat[i].kt     = matD.submat[i].kt;
-	int kt  = matD.submat[i].kt;
-	int ndt = matD.submat[i].ndt;
-	int ndl = matD.submat[i].ndl;
-	if(matF->submat[i].ltmtx==1){
-	  matF->submat[i].a1  = new float[kt*ndt]; //(float*)malloc(sizeof(float)*kt*ndt);
-	  matF->submat[i].a2  = new float[kt*ndl]; //(float*)malloc(sizeof(float)*kt*ndl);
-	  matF->submat[i].a2t = new float[kt*ndl]; //(float*)malloc(sizeof(float)*kt*ndl);
-	  for(j=0; j<kt*ndt; j++)matF->submat[i].a1[j]  = matD.submat[i].a1[j];
-	  for(j=0; j<kt*ndl; j++)matF->submat[i].a2[j]  = matD.submat[i].a2[j];
-	  for(j=0; j<kt*ndl; j++)matF->submat[i].a2t[j] = matD.submat[i].a2t[j];
-	  len += kt*ndt + kt*ndl;
-	}else{
-	  matF->submat[i].a1  = new float[ndl*ndt]; //(float*)malloc(sizeof(float)*ndl*ndt);
-	  matF->submat[i].a2  = NULL;
-	  matF->submat[i].a2t = NULL;
-	  for(j=0; j<ndl*ndt; j++)matF->submat[i].a1[j] = matD.submat[i].a1[j];
-	  len += ndl*ndt;
+  printf("convertD2F: begin\n"); fflush(stdout);
+  if(matD!=NULL){
+	int len;
+	printf("convertD2F: matD -> matF: begin\n"); fflush(stdout);
+	matF->nd     = matD->nd;
+	matF->nlf    = matD->nlf;
+	matF->ktmax  = matD->ktmax;
+	matF->submat = new submatrix<float>[matF->nlf]; //(submatrix<float>*)malloc(sizeof(submatrix<float>)*matF->nlf);
+	len = 0;
+	for(i=0;i<matF->nlf;i++){
+	  matF->submat[i].ltmtx = matD->submat[i].ltmtx;
+	  matF->submat[i].ndl    = matD->submat[i].ndl;
+	  matF->submat[i].ndt    = matD->submat[i].ndt;
+	  matF->submat[i].nstrtl = matD->submat[i].nstrtl;
+	  matF->submat[i].nstrtt = matD->submat[i].nstrtt;
+	  matF->submat[i].kt     = matD->submat[i].kt;
+	  int kt  = matD->submat[i].kt;
+	  int ndt = matD->submat[i].ndt;
+	  int ndl = matD->submat[i].ndl;
+	  if(matF->submat[i].ltmtx==1){
+		matF->submat[i].a1  = new float[kt*ndt]; //(float*)malloc(sizeof(float)*kt*ndt);
+		matF->submat[i].a2  = new float[kt*ndl]; //(float*)malloc(sizeof(float)*kt*ndl);
+		matF->submat[i].a2t = new float[kt*ndl]; //(float*)malloc(sizeof(float)*kt*ndl);
+		for(j=0; j<kt*ndt; j++)matF->submat[i].a1[j]  = matD->submat[i].a1[j];
+		for(j=0; j<kt*ndl; j++)matF->submat[i].a2[j]  = matD->submat[i].a2[j];
+		for(j=0; j<kt*ndl; j++)matF->submat[i].a2t[j] = matD->submat[i].a2t[j];
+		len += kt*ndt + kt*ndl;
+	  }else{
+		matF->submat[i].a1  = new float[ndl*ndt]; //(float*)malloc(sizeof(float)*ndl*ndt);
+		matF->submat[i].a2  = NULL;
+		matF->submat[i].a2t = NULL;
+		for(j=0; j<ndl*ndt; j++)matF->submat[i].a1[j] = matD->submat[i].a1[j];
+		len += ndl*ndt;
+	  }
 	}
+	printf("convertD2F: matD -> matF: end\n"); fflush(stdout);
   }
-
-  matF2->nd       = matD2.nd;
-  matF2->nlf      = matD2.nlf;
-  matF2->ktmax    = matD2.ktmax;
-  matF2->ltmtx    = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->kt       = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->ndl      = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->ndt      = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->nstrtl   = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->nstrtt   = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->a1       = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->a2       = new int[matD2.nlf]; //(int*)malloc(sizeof(int)*matD2.nlf);
-  matF2->rowmat   = new float[len]; //(float*)malloc(sizeof(float)*len);
-  matF2->rowmat_t = new float[len]; //(float*)malloc(sizeof(float)*len);
-  offset = 0;
-  for(i=0;i<matD2.nlf;i++){
-	matF2->ltmtx[i]  = matF->submat[i].ltmtx;
-	matF2->ndl[i]    = matF->submat[i].ndl;
-	matF2->ndt[i]    = matF->submat[i].ndt;
-	matF2->nstrtl[i] = matF->submat[i].nstrtl;
-	matF2->nstrtt[i] = matF->submat[i].nstrtt;
-	matF2->kt[i]     = matF->submat[i].kt;
-	int kt  = matF->submat[i].kt;
-	int ndt = matF->submat[i].ndt;
-	int ndl = matF->submat[i].ndl;
-	if(matF2->ltmtx[i]==1){
-	  matF2->a1[i] = offset;
-	  memcpy(&matF2->rowmat[offset], matF->submat[i].a1, sizeof(float)*kt*ndt);
-	  memcpy(&matF2->rowmat_t[offset], matF->submat[i].a1, sizeof(float)*kt*ndt);
-	  offset += kt*ndt;
-	  matF2->a2[i] = offset;
-	  memcpy(&matF2->rowmat[offset], matF->submat[i].a2, sizeof(float)*kt*ndl);
-	  memcpy(&matF2->rowmat_t[offset], matF->submat[i].a2t, sizeof(float)*kt*ndl);
-	  offset += kt*ndl;
-	}else{
-	  matF2->a1[i] = offset;
-	  memcpy(&matF2->rowmat[offset], matF->submat[i].a1, sizeof(double)*ndl*ndt);
-	  memcpy(&matF2->rowmat_t[offset], matF->submat[i].a1, sizeof(double)*ndl*ndt);
-	  offset += ndl*ndt;
-	  matF2->a2[i] = 0;
+  if(matD2!=NULL){
+	int offset;
+	printf("convertD2F: matD2 -> matF2: begin\n"); fflush(stdout);
+	matF2->nd       = matD2->nd;
+	matF2->nlf      = matD2->nlf;
+	matF2->ktmax    = matD2->ktmax;
+	matF2->ltmtx    = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->kt       = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->ndl      = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->ndt      = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->nstrtl   = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->nstrtt   = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->a1       = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->a2       = new int[matD2->nlf]; //(int*)malloc(sizeof(int)*matD2->nlf);
+	matF2->rowmat   = new float[matD2->len]; //(float*)malloc(sizeof(float)*len);
+	matF2->rowmat_t = new float[matD2->len]; //(float*)malloc(sizeof(float)*len);
+	offset = 0;
+	for(i=0;i<matD2->nlf;i++){
+	  matF2->ltmtx[i]  = matD2->ltmtx[i];
+	  matF2->ndl[i]    = matD2->ndl[i];
+	  matF2->ndt[i]    = matD2->ndt[i];
+	  matF2->nstrtl[i] = matD2->nstrtl[i];
+	  matF2->nstrtt[i] = matD2->nstrtt[i];
+	  matF2->kt[i]     = matD2->kt[i];
+	  int kt  = matD2->kt[i];
+	  int ndt = matD2->ndt[i];
+	  int ndl = matD2->ndl[i];
+	  if(matF2->ltmtx[i]==1){
+		matF2->a1[i] = offset;
+		for(j=0;j<kt*ndt;j++)matF2->rowmat[offset+j]   = matD2->rowmat[offset+j];
+		for(j=0;j<kt*ndt;j++)matF2->rowmat_t[offset+j] = matD2->rowmat_t[offset+j];
+		offset += kt*ndt;
+		matF2->a2[i] = offset;
+		for(j=0;j<kt*ndl;j++)matF2->rowmat[offset+j]   = matD2->rowmat[offset+j];
+		for(j=0;j<kt*ndl;j++)matF2->rowmat_t[offset+j] = matD2->rowmat_t[offset+j];
+		offset += kt*ndl;
+	  }else{
+		matF2->a1[i] = offset;
+		for(j=0;j<ndl*ndt;j++)matF2->rowmat[offset+j]   = matD2->rowmat[offset+j];
+		for(j=0;j<ndl*ndt;j++)matF2->rowmat_t[offset+j] = matD2->rowmat_t[offset+j];
+		offset += ndl*ndt;
+		matF2->a2[i] = 0;
+	  }
 	}
+	printf("check len: %d %d\n", matF2->len, offset);
+	printf("convertD2F: matD2 -> matF2: end\n"); fflush(stdout);
   }
-  matF2->len = offset;
-
+  printf("convertD2F: end\n"); fflush(stdout);
   return 0;
 }
 

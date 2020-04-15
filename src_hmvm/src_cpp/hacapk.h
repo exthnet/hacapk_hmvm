@@ -25,10 +25,10 @@ struct matrix2{
   int nd;
   int nlf;
   int ktmax;
+  int len;
   int *nleavs;
   int *ltmtx, *kt, *ndl, *ndt, *nstrtl, *nstrtt;
   int *a1, *a2; // head
-  int len;
   T *rowmat, *rowmat_t; // data
   // 近似行列と密行列を分離してみる（確認用）
   int napprox, ndense;
@@ -37,25 +37,24 @@ struct matrix2{
 
 // setup matrix
 int loadHmatrix(const char *fname, matrix<double>*, matrix2<double>*);
-int convertD2F(matrix<float> *matF, matrix2<float> *matF2, matrix<double> matD, matrix2<double> matD2);
-
-//int dummymatrix(matrixD *mat, matrixD2 *mat2, int ndl, int ndt, int n);
+int loadHmatrix2(const char *fname, matrix2<double>*);
+int convertD2F(matrix<float> *matF, matrix2<float> *matF2, const matrix<double> *matD, const matrix2<double> *matD2);
 
 // mkl
 #ifdef __INTEL_COMPILER
-template <class T>void hmvm_blas_p(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_blas_p_bench(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_blas_s(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_blas_s_bench(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_cblas_p(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_cblas_p_bench(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_cblas_s(matrix<T> mat, matrix2<T> mat2, T *b);
-template <class T>void hmvm_cblas_s_bench(matrix<T> mat, matrix2<T> mat2, T *b);
+template <class T>void hmvm_blas_p(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_blas_p_bench(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_blas_s(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_blas_s_bench(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_cblas_p(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_cblas_p_bench(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_cblas_s(matrix<T> *mat, matrix2<T> *mat2, T *b);
+template <class T>void hmvm_cblas_s_bench(matrix<T> *mat, matrix2<T> *mat2, T *b);
 #endif
 
 // cuda
 #ifdef _USE_CUDA
-//template <class T>void hmvm_cuda1(matrix2<T> mat2, T *b, int kernel);
+//template <class T>void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel);
 #endif
 
 #endif

@@ -1,7 +1,9 @@
 # -*- makefile -*-
 
 # comment out if you don't want to use GPU
-GPU = 1
+ifndef GPU
+	GPU=0
+endif
 
 ifeq ($(GPU),1)
 CPP  = g++ -std=c++11
@@ -12,16 +14,17 @@ NVCCFLAGS = -Xcompiler "-O3 -fopenmp" \
 --generate-code arch=compute_60,code=sm_60 \
 --generate-code arch=compute_70,code=sm_70
 # 53=JetsonTX1, 60=Pascal, 70=Volta
-TARGET = hmvm_gpu
+TARGET = hmvm_gpu1 hmvm_gpu2
 else
 CPP  = g++ -std=c++11
 CCFLAGS  = -O3 -fopenmp
-TARGET = hmvm_cpu
+TARGET = hmvm_cpu1 hmvm_cpu2
 endif
 
 ######################
 # Object files
-OBJS  = loadmatrix.o hmvm.o hmvm_omp.o hmvm_seq.o
+OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
+OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
 CUOBJS = hmvm_cuda.o hmvm_cuda_kernels.o
 HOBJS = hacapk.h
 
@@ -31,8 +34,8 @@ HOBJS = hacapk.h
 .SUFFIXES: .o .cpp
 .SUFFIXES: .o .cu
 
-$(TARGET): $(OBJS)
-	$(LINK) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+#$(TARGET): $(OBJS)
+#	$(LINK) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 .cpp.o: *.cpp $(HOBJS)
 	$(CPP) -c $(CCFLAGS)  $(INCS) $<
@@ -41,10 +44,14 @@ $(TARGET): $(OBJS)
 
 all: $(TARGET)
 
-hmvm_cpu: $(OBJS) $(HOBJS)
-	$(CPP) -o hmvm_cpu $(OBJS) -lm $(CCFLAGS)
-hmvm_gpu: $(OBJS) $(HOBJS) $(CUOBJS)
-	$(NVCC) -o hmvm_gpu $(OBJS) $(CUOBJS) -lm $(NVCCFLAGS)
+hmvm_cpu1: $(OBJS1) $(HOBJS)
+	$(CPP) -o hmvm_cpu1 $(OBJS1) -lm $(CCFLAGS)
+hmvm_cpu2: $(OBJS2) $(HOBJS)
+	$(CPP) -o hmvm_cpu2 $(OBJS2) -lm $(CCFLAGS)
+hmvm_gpu1: $(OBJS1) $(HOBJS) $(CUOBJS)
+	$(NVCC) -o hmvm_gpu1 $(OBJS1) $(CUOBJS) -lm $(NVCCFLAGS)
+hmvm_gpu2: $(OBJS2) $(HOBJS) $(CUOBJS)
+	$(NVCC) -o hmvm_gpu2 $(OBJS2) $(CUOBJS) -lm $(NVCCFLAGS)
 
 clean:
 	rm -f *.o *.mod *~
