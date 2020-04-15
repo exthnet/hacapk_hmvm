@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "hacapk_c.h"
+#include "hacapk.h"
 
 int main(int argc, char **argv)
 {

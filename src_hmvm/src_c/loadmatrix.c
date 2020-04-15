@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "hacapk_c.h"
+#include "hacapk.h"
 
 
 int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)

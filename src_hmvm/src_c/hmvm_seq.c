@@ -3,7 +3,7 @@
 #include <string.h>
 #include <omp.h>
 
-#include "hacapk_c.h"
+#include "hacapk.h"
 
 // ######## ######## ######## ########
 void hmvm_seq_1(double *v, matrix *mat, double *b)

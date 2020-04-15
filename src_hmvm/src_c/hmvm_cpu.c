@@ -3,7 +3,7 @@
 #include <string.h>
 #include <omp.h>
 
-#include "hacapk_c.h"
+#include "hacapk.h"
 
 // ######## ######## ######## ########
 // sequential

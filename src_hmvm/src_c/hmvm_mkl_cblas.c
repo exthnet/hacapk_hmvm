@@ -4,7 +4,7 @@
 #include <omp.h>
 #include <mkl.h>
 
-#include "hacapk_c.h"
+#include "hacapk.h"
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // mkl cblas, parallel (multi-threaded cblas)
