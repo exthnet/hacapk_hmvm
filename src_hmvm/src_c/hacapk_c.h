@@ -20,10 +20,10 @@ typedef struct matrix2{
   int nd;
   int nlf;
   int ktmax;
+  int len;
   int *nleavs;
   int *ltmtx, *kt, *ndl, *ndt, *nstrtl, *nstrtt;
   int *a1, *a2; // head
-  int len;
   double *rowmat, *rowmat_t; // data
   // 近似行列と密行列を分離してみる（確認用）
   int napprox, ndense;
@@ -31,8 +31,8 @@ typedef struct matrix2{
 }matrix2;
 
 // setup matrix
-int loadmatrix(const char *fname, matrix*, matrix2*);
-int loadmatrix2(const char *fname, matrix2*);
+int loadHmatrix(const char *fname, matrix*, matrix2*);
+int loadHmatrix2(const char *fname, matrix2*);
 int dummymatrix(matrix *mat, matrix2 *mat2, int ndl, int ndt, int n);
 
 // seq

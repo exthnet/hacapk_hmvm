@@ -238,7 +238,7 @@ void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_seq_1(v, mat, b);
 	if(dump_result){
-	  F = fopen("seq_1_d.txt", "w");
+	  F = fopen("result_seq_1_d.txt", "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
@@ -250,7 +250,7 @@ void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_seq_1t(v, mat, b);
 	if(dump_result){
-	  F = fopen("seq_1t_d.txt", "w");
+	  F = fopen("result_seq_1t_d.txt", "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
@@ -262,7 +262,7 @@ void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_seq_2(v, mat2, b);
 	if(dump_result){
-	  F = fopen("seq_2_d.txt", "w");
+	  F = fopen("result_seq_2_d.txt", "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}
@@ -274,7 +274,7 @@ void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 	for(i=0;i<nd;i++)v[i] = 0.0;
 	hmvm_seq_2t(v, mat2, b);
 	if(dump_result){
-	  F = fopen("seq_2t_d.txt", "w");
+	  F = fopen("result_seq_2t_d.txt", "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
 	}

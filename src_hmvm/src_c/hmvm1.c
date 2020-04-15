@@ -18,10 +18,10 @@ int main(int argc, char **argv)
 	return -1;
   }
   if(argc>=3){dump_result=atoi(argv[2]);printf("dump_result = %d\n",dump_result);}
-  printf("call loadmatrix %s\n", argv[1]); fflush(stdout);
+  printf("call loadHmatrix %s\n", argv[1]); fflush(stdout);
   mat = (matrix*)malloc(sizeof(matrix));
   mat2 = (matrix2*)malloc(sizeof(matrix2));
-  ret = loadmatrix(argv[1], mat, mat2);
+  ret = loadHmatrix(argv[1], mat, mat2);
   if(ret)return -1;
 
   int nd = mat->nd;
@@ -41,20 +41,6 @@ int main(int argc, char **argv)
   // ######## ######## ######## ######## ######## ######## ######## ########
   // ready for hmvm
   // ######## ######## ######## ######## ######## ######## ######## ########
-#if 0
-  int ip;
-  mat2.approx = (int*)malloc(sizeof(int)*mat2.nlf);
-  mat2.dense  = (int*)malloc(sizeof(int)*mat2.nlf);
-  mat2.napprox = mat2.ndense = 0;
-  for(ip=0; ip<mat2.nlf; ip++){
-	if(mat2.ltmtx[ip]==1){
-	  mat2.approx[mat2.napprox++] = ip;
-	}else{
-	  mat2.dense[mat2.ndense++] = ip;
-	}
-  }
-  printf(" %d approx, %d dense\n", mat2.napprox, mat2.ndense);
-#endif
   // sequential
   hmvm_seq(mat, mat2, b, dump_result);
   hmvm_seq_bench(mat, mat2, b);

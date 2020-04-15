@@ -18,9 +18,9 @@ int main(int argc, char **argv)
 	return -1;
   }
   if(argc>=3){dump_result=atoi(argv[2]);printf("dump_result = %d\n",dump_result);}
-  printf("call loadmatrix2 %s\n", argv[1]); fflush(stdout);
+  printf("call loadHmatrix2 %s\n", argv[1]); fflush(stdout);
   mat2 = (matrix2*)malloc(sizeof(matrix2));
-  ret = loadmatrix2(argv[1], mat2);
+  ret = loadHmatrix2(argv[1], mat2);
   if(ret)return -1;
 
   int nd = mat2->nd;

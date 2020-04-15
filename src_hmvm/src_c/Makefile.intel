@@ -8,7 +8,7 @@ CCFLAGS  += -O3 -qopenmp -mkl
 # Object files
 OBJS1  = loadmatrix.o hmvm1.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
-
+HEADERS = hacapk.h
 
 ######################
 # Compile cmmands
@@ -17,7 +17,7 @@ OBJS2  = loadmatrix.o hmvm2.o hmvm_seq.o hmvm_omp.o hmvm_mkl.o hmvm_mkl_cblas.o
 $(TARGET): $(OBJS)
 	$(LINK) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
-.c.o: *.c
+.c.o: *.c $(HEADERS)
 	$(CC)  -c $(CCFLAGS)  $(INCS) $<
 .f90.o: *.f90
 	$(F90) -c $(F90FLAGS) $(INCS) $<

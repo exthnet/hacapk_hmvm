@@ -5,13 +5,13 @@
 #include "hacapk_c.h"
 
 
-int loadmatrix(const char *fname, matrix *mat, matrix2 *mat2)
+int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 {
   int i;
   FILE *F;
   int irecord;
   int nd, nlf, ktmax, len, offset;
-  printf("loadmatrix: begin\n"); fflush(stdout);
+  printf("loadHmatrix: begin\n"); fflush(stdout);
   F = fopen(fname, "r");
   if(F==NULL){
 	printf("fopen %s failed\n", fname);
@@ -37,7 +37,7 @@ int loadmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 
   len = 0;
 
-  printf("loadmatrix: load rowdata\n"); fflush(stdout);
+  printf("loadHmatrix: load rowdata\n"); fflush(stdout);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	fread(&irecord, sizeof(int), 1, F);
@@ -85,7 +85,7 @@ int loadmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 	}
   }
 
-  printf("loadmatrix: make matrix2\n"); fflush(stdout);
+  printf("loadHmatrix: make matrix2\n"); fflush(stdout);
   mat2->nd = nd;
   mat2->nlf = nlf;
   mat2->ktmax = ktmax;
@@ -127,17 +127,17 @@ int loadmatrix(const char *fname, matrix *mat, matrix2 *mat2)
   }
   mat2->len = offset;
 
-  printf("loadmatrix: end\n"); fflush(stdout);
+  printf("loadHmatrix: end\n"); fflush(stdout);
   return 0;
 }
 
-int loadmatrix2(const char *fname, matrix2 *mat2)
+int loadHmatrix2(const char *fname, matrix2 *mat2)
 {
   int i;
   FILE *F;
   int irecord;
   int nd, nlf, ktmax, len, offset;
-  printf("loadmatrix: begin\n"); fflush(stdout);
+  printf("loadHmatrix: begin\n"); fflush(stdout);
   F = fopen(fname, "r");
   if(F==NULL){
 	printf("fopen %s failed\n", fname);
@@ -147,15 +147,19 @@ int loadmatrix2(const char *fname, matrix2 *mat2)
   fread(&nd, sizeof(int), 1, F);
   fread(&nlf, sizeof(int), 1, F);
   fread(&ktmax, sizeof(int), 1, F);
+  fread(&len, sizeof(int), 1, F);
   fread(&irecord, sizeof(int), 1, F);
   printf("nd =  %d\n", nd);
   printf("nlf = %d\n", nlf);
   printf("ktmax = %d\n", ktmax);
+  printf("len %d\n", len);
+  fflush(stdout);
   mat2->nd = nd;
   mat2->nlf = nlf;
   mat2->ktmax = ktmax;
+  mat2->len = len;
 
-  printf("loadmatrix: make matrix2\n"); fflush(stdout);
+  printf("loadHmatrix: make matrix2\n"); fflush(stdout);
   mat2->ltmtx = (int*)malloc(sizeof(int)*nlf);
   mat2->kt = (int*)malloc(sizeof(int)*nlf);
   mat2->ndl = (int*)malloc(sizeof(int)*nlf);
@@ -182,9 +186,6 @@ int loadmatrix2(const char *fname, matrix2 *mat2)
   fread(&irecord, sizeof(int), 1, F);
   fread(&irecord, sizeof(int), 1, F);
   fread(mat2->kt, sizeof(int), nlf, F); printf("kt %d\n", mat2->kt[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&len, sizeof(int), 1, F); printf("len %d\n", len); fflush(stdout);
   fread(&irecord, sizeof(int), 1, F);
 
   mat2->rowmat = (double*)malloc(sizeof(double)*len);
@@ -224,9 +225,9 @@ int loadmatrix2(const char *fname, matrix2 *mat2)
 	  mat2->a2[i] = 0;
 	}
   }
-  mat2->len = offset;
+  printf("check len: %d %d\n", mat2->len, offset);
 
-  printf("loadmatrix2: end\n"); fflush(stdout);
+  printf("loadHmatrix2: end\n"); fflush(stdout);
   return 0;
 }
 
