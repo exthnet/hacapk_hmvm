@@ -81,7 +81,7 @@ contains
 
     write(*,*)"HACApK_hdump_dump_leafmtx: begin"
 
-    write(fname,'(a,i0,a)')'hmatrix_',mpinr,'.bin'
+    write(fname,'(a,i0,a)')'hmatrix_1.bin'
     write(*,*)"file dump to ",fname
     nd=st_leafmtxp%nd; nlf=st_leafmtxp%nlf; ktmax=st_leafmtxp%ktmax
     open( 11, file=fname, action='write', iostat=ierr, form="unformatted" )
@@ -121,7 +121,7 @@ contains
 
     write(*,*)"HACApK_hdump_dump_leafmtx2: begin"
 
-    write(fname,'(a,i0,a)')'hmatrix_',mpinr,'2.bin'
+    write(fname,'(a,i0,a)')'hmatrix_2.bin'
     write(*,*)"file dump to ",fname
     nd=st_leafmtxp%nd; nlf=st_leafmtxp%nlf; ktmax=st_leafmtxp%ktmax
     open( 11, file=fname, action='write', iostat=ierr, form="unformatted" )
@@ -131,7 +131,19 @@ contains
     !    do ip=1,2
     allocate(buf(nlf))
 
-    write(11) nd,nlf,ktmax
+    len = 0
+    do ip=1,nlf
+       ltmtx=st_leafmtxp%st_lf(ip)%ltmtx
+       if(ltmtx==1)then ! Low-rank matrix
+          len = len + st_leafmtxp%st_lf(ip)%ndt * st_leafmtxp%st_lf(ip)%kt
+          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%kt
+       elseif(ltmtx==2)then ! Dense matrix
+          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%ndt
+       endif
+    enddo
+
+    write(11) nd,nlf,ktmax,len
+
     do ip=1,nlf
        buf(ip) =st_leafmtxp%st_lf(ip)%ltmtx
     enddo
@@ -156,17 +168,6 @@ contains
        buf(ip) =st_leafmtxp%st_lf(ip)%kt
     enddo
     write(11) buf
-    len = 0
-    do ip=1,nlf
-       ltmtx=st_leafmtxp%st_lf(ip)%ltmtx
-       if(ltmtx==1)then ! Low-rank matrix
-          len = len + st_leafmtxp%st_lf(ip)%ndt * st_leafmtxp%st_lf(ip)%kt
-          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%kt
-       elseif(ltmtx==2)then ! Dense matrix
-          len = len + st_leafmtxp%st_lf(ip)%ndl * st_leafmtxp%st_lf(ip)%ndt
-       endif
-    enddo
-    write(11) len
     do ip=1,nlf
        ltmtx=st_leafmtxp%st_lf(ip)%ltmtx
        if(ltmtx==1)then ! Low-rank matrix
