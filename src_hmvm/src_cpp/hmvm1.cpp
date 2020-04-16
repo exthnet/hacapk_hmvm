@@ -45,6 +45,7 @@ int main(int argc, char **argv)
   // ready for hmvm
   // ######## ######## ######## ######## ######## ######## ######## ########
 
+#if 1
   // ######## ######## ######## ######## ######## ######## ######## ########
   // double
   // ######## ######## ######## ######## ######## ######## ######## ########
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
   hmvm_seq_bench<double>(matD, matD2, b);
   // OpenMP
   hmvm_omp<double>(matD, matD2, b, dump_result);
-  hmvm_omp_bench<double>(matD, matD2, b);
+  //hmvm_omp_bench<double>(matD, matD2, b);
   // MKL
 #ifdef __INTEL_COMPILER
   hmvm_blas_p(matD, matD2, b, dump_result);
@@ -70,12 +71,14 @@ int main(int argc, char **argv)
 #endif
   // CUDA
 #ifdef _USE_CUDA
-  hmvm_cuda1(matD2, b, 0, dump_result);
-  hmvm_cuda1(matD2, b, 1, dump_result);
-  hmvm_cuda1(matD2, b, 2, dump_result);
+  hmvm_cuda1<double>(matD2, b, 0, dump_result);
+  hmvm_cuda1<double>(matD2, b, 1, dump_result);
+  hmvm_cuda1<double>(matD2, b, 2, dump_result);
 #endif
   delete [] b;//free(b);
+#endif
 
+#if 0
   // ######## ######## ######## ######## ######## ######## ######## ########
   // float
   // ######## ######## ######## ######## ######## ######## ######## ########
@@ -98,12 +101,12 @@ int main(int argc, char **argv)
   hmvm_omp_bench<float>(matF, matF2, fb);
   // CUDA
 #ifdef _USE_CUDA
-  hmvm_cuda1(matF2, fb, 0, dump_result);
-  hmvm_cuda1(matF2, fb, 1, dump_result);
-  hmvm_cuda1(matF2, fb, 2, dump_result);
+  hmvm_cuda1<float>(matF2, fb, 0, dump_result);
+  hmvm_cuda1<float>(matF2, fb, 1, dump_result);
+  hmvm_cuda1<float>(matF2, fb, 2, dump_result);
 #endif
   delete [] fb;//free(fb);
-
+#endif
   delete [] matF2;
   delete [] matF;
   delete [] matD2;

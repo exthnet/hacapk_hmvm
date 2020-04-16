@@ -27,7 +27,7 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 	nstrtt = mat->submat[i].nstrtt;
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
-#if 0
+#if 1
 	  for(j=0;j<kt;j++)tmp[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
@@ -54,8 +54,8 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 		  v[ill] += mat->submat[i].a1[itl] * b[itt];
 		}
 	  }
-	}
 #endif
+	}
   }
   free(tmp);
 #if _DEBUG_LEVEL >= 1
@@ -121,12 +121,13 @@ template<class T>
 void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 {
   int i, j;
-  T *tmp;
+  T tmp;
+  T *tmp2;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2: begin\n");
   printf("hmvm_seq2: nlf=%d\n", mat->nlf);
 #endif
-  tmp = (T*)malloc(sizeof(T)*mat->ktmax);
+  tmp2 = (T*)malloc(sizeof(T)*mat->ktmax);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -138,13 +139,14 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 	nstrtt = mat->nstrtt[i];
 	kt     = mat->kt[i];
 	if(ltmtx==1){
-	  for(j=0;j<kt;j++)tmp[j]=0.0;
+#if 0
+	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  head = mat->a1[i];
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp[il] += mat->rowmat[head+itl] * b[itt];
+		  tmp2[il] += mat->rowmat[head+itl] * b[itt];
 		}
 	  }
 	  head = mat->a2[i];
@@ -152,22 +154,27 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 		for(it=0;it<ndl;it++){
 		  ill = it+nstrtl-1;
 		  itl=it+il*ndl;
-		  v[ill] += mat->rowmat[head+itl] * tmp[il];
+		  v[ill] += mat->rowmat[head+itl] * tmp2[il];
 		}
 	  }
+#endif
 	}else{
+#if 1
 	  head = mat->a1[i];
 	  for(il=0;il<ndl;il++){
+		tmp = 0.0;
 		ill=il+nstrtl-1;
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  v[ill] += mat->rowmat[head+itl] * b[itt];
+		  tmp += mat->rowmat[head+itl] * b[itt];
 		}
+		v[ill] += tmp;
 	  }
+#endif
 	}
   }
-  free(tmp);
+  free(tmp2);
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2: end\n");
 #endif

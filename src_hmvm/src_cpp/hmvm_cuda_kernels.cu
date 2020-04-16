@@ -35,7 +35,7 @@ __device__ float myAtomicAdd(float* address, float val)
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // 0: 完全逐次
-
+#if 1
 template <class T>
 __global__ void hmvm_cuda_seq
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
@@ -48,7 +48,6 @@ __global__ void hmvm_cuda_seq
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp;
   //extern __shared__ T tmp2[];
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
@@ -56,6 +55,7 @@ __global__ void hmvm_cuda_seq
 
   // approx
   for(i=0; i<napprox; i++){
+#if 1
 	ip = approx[i];
 	ndl = _ndl[ip];
 	ndt = _ndt[ip];
@@ -83,9 +83,11 @@ __global__ void hmvm_cuda_seq
 		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
 	  }
 	}
+#endif
   }
   // dense
   for(i=0; i<ndense; i++){
+#if 1
 	ip = dense[i];
 	ndl = _ndl[ip];
 	ndt = _ndt[ip];
@@ -97,21 +99,24 @@ __global__ void hmvm_cuda_seq
 #endif
 	head = a1[ip];
 	for(il=0; il<ndl; il++){
-	  tmp = 0.0;
+	  T tmp = 0.0;
 	  ill=il+nstrtl-1;
 	  for(it=0; it<ndt; it++){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
 		tmp += rowmat[head+itl]*d_zu[itt];
+		//		printf("rowmat[%d] %e\n", head+itl, rowmat[head+itl]);
 	  }
 	  myAtomicAdd(&d_zaut[ill], tmp);
+	  printf("myAtomicAdd %d %e\n", ill, tmp);
 	}
+#endif
   }
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cudaD : end\n");
 #endif
 }
-
+#endif
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 // block並列化カーネル
@@ -127,7 +132,6 @@ __global__ void hmvm_cuda_block
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp;
   //extern __shared__ T tmp2[];
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
@@ -177,7 +181,7 @@ __global__ void hmvm_cuda_block
 #endif
 	head = a1[ip];
 	for(il=0; il<ndl; il++){
-	  tmp = 0.0;
+	  T tmp = 0.0;
 	  ill=il+nstrtl-1;
 	  for(it=0; it<ndt; it++){
 		itt=it+nstrtt-1;
@@ -316,18 +320,6 @@ template __global__ void hmvm_cuda_block<double>
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
  int napprox, int *approx, int ndense, int *dense);
 
-template __global__ void hmvm_cuda_hybrid1<double,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,2>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,4>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
 template __global__ void hmvm_cuda_hybrid1<float,1>
 (float *d_zaut, float *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
@@ -339,4 +331,16 @@ template __global__ void hmvm_cuda_hybrid1<float,2>
 template __global__ void hmvm_cuda_hybrid1<float,4>
 (float *d_zaut, float *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_hybrid1<double,1>
+(double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_hybrid1<double,2>
+(double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
+ int napprox, int *approx, int ndense, int *dense);
+template __global__ void hmvm_cuda_hybrid1<double,4>
+(double *d_zaut, double *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
  int napprox, int *approx, int ndense, int *dense);
