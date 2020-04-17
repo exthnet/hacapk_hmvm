@@ -260,7 +260,7 @@ void hmvm_omp_2_atomic
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->ltmtx[ip]==1){
-#if 1
+#if 0
 		kt=mat->kt[ip];
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		head=mat->a1[ip];
@@ -297,7 +297,7 @@ void hmvm_omp_2_atomic
 		  }
 #pragma omp atomic
 		  zau[ill] += tmp;
-		  printf("atomicAdd %d %e\n", ill, tmp);
+		  //printf("atomicAdd %d %e\n", ill, tmp);
 		}
 #endif
 	  }

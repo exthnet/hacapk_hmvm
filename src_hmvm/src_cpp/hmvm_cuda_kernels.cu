@@ -108,7 +108,7 @@ __global__ void hmvm_cuda_seq
 		//		printf("rowmat[%d] %e\n", head+itl, rowmat[head+itl]);
 	  }
 	  myAtomicAdd(&d_zaut[ill], tmp);
-	  printf("myAtomicAdd %d %e\n", ill, tmp);
+	  //printf("myAtomicAdd %d %e\n", ill, tmp);
 	}
 #endif
   }
@@ -214,7 +214,6 @@ __global__ void hmvm_cuda_hybrid1
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
  int napprox, int *approx, int ndense, int *dense)
 {
-  return;
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cuda_hybrid1 : begin\n");
 #endif
@@ -227,7 +226,7 @@ __global__ void hmvm_cuda_hybrid1
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp;
+  T tmp = 0.0;
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
 
@@ -276,6 +275,30 @@ __global__ void hmvm_cuda_hybrid1
 #endif
 	head = a1[ip];
 	for(il=bid; il<ndl; il+=blen){
+#if 1
+	  tmp = 0.0;
+	  ill=il+nstrtl-1;
+	  if(il==0&&ip==0&&xid==0)printf("* %d %f + %f\n", ill, d_zaut[ill], tmp);
+	  for(it=xid; it<ndt; it+=xlen){
+		itt=it+nstrtt-1;
+		itl=it+il*ndt;
+		tmp += rowmat[head+itl]*d_zu[itt];
+	  }
+	  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down(tmp, offset);
+	  __syncthreads();
+	  if(il==0&&ip==0)printf("%d %f\n", threadIdx.x, tmp);
+	  __syncthreads();
+	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(tmp, offset, warpSize);
+	  __syncthreads();
+	  if(xid==0){
+		if(il==0&&ip==0)printf("-> %d %f + %f\n", ill, d_zaut[ill], tmp);
+		myAtomicAdd(&d_zaut[ill], tmp);
+		if(il==0&&ip==0)printf("-> %d %f + %f\n", ill, d_zaut[ill], tmp);
+	  }
+	  __syncthreads();
+#endif
+#if 1
+	  if(il==0&&ip==0&&xid==0)printf("* %d %f + %f\n", ill, d_zaut[ill], tmp);
 	  tmp = 0.0;
 	  ill=il+nstrtl-1;
 	  for(it=xid; it<ndt; it+=xlen){
@@ -284,10 +307,17 @@ __global__ void hmvm_cuda_hybrid1
 		tmp += rowmat[head+itl]*d_zu[itt];
 	  }
 	  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down(tmp, offset);
-	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(tmp, offset, warpSize);
+	  __syncthreads();
 	  if(xid==0){
-		myAtomicAdd(&d_zaut[ill], tmp);
+		if(il==0&&ip==0)printf("-> %d %f + %f\n", ill, d_zaut[ill], tmp);
 	  }
+	  __syncthreads();
+	  myAtomicAdd(&d_zaut[ill], tmp);
+	  __syncthreads();
+	  if(xid==0){
+		if(il==0&&ip==0)printf("-> %d %f + %f\n", ill, d_zaut[ill], tmp);
+	  }
+#endif
 	}
 #endif
   }
