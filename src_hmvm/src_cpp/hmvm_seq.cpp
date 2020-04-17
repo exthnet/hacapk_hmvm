@@ -139,7 +139,7 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 	nstrtt = mat->nstrtt[i];
 	kt     = mat->kt[i];
 	if(ltmtx==1){
-#if 0
+#if 1
 	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  head = mat->a1[i];
 	  for(il=0;il<kt;il++){

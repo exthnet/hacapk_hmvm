@@ -138,6 +138,7 @@ __global__ void hmvm_cuda_block
   int i;
 
   if(blockIdx.x<napprox){
+#if 1
 	// approx
 	//for(i=0; i<napprox; i++){
 	ip = approx[blockIdx.x];
@@ -164,10 +165,13 @@ __global__ void hmvm_cuda_block
 	  for(it=0; it<ndl; it++){
 		ill=it+nstrtl-1;
 		itl=it+il*ndl;
+		if(blockIdx.x==0&&ip==approx[0])printf("add1: %e\n", rowmat[head+itl]*tmp2[il]);
 		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
 	  }
 	}
+#endif
   }else{
+#if 1
 	// dense
 	//for(i=0; i<ndense; i++){
 	ip = dense[blockIdx.x - napprox];
@@ -190,6 +194,7 @@ __global__ void hmvm_cuda_block
 	  }
 	  myAtomicAdd(&d_zaut[ill], tmp);
 	}
+#endif
   }
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cudaD_block : end\n");
@@ -198,8 +203,6 @@ __global__ void hmvm_cuda_block
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 
-// まだデバッグ中
-
 #if 1
 /*
   <<<ndense,32>>>
@@ -207,7 +210,7 @@ __global__ void hmvm_cuda_block
   1 line by 1/div WARP
 */
 
-// nlf block, 32 thread
+// nlf block, 32 thread, all atomic版とwarp shuffle版
 template <class T, int div>
 __global__ void hmvm_cuda_hybrid1
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
@@ -231,7 +234,7 @@ __global__ void hmvm_cuda_hybrid1
   T *tmp2 = reinterpret_cast<T *>(my_smem);
 
   if(gid<napprox){
-#if 0
+#if 1
 	// approx
 	ip = approx[gid];
 	ndl = _ndl[ip];
@@ -245,12 +248,16 @@ __global__ void hmvm_cuda_hybrid1
 #endif
 	head = a1[ip];
 	for(il=bid; il<kt; il+=blen){
-	  tmp2[il] = 0.0;
+	  if(xid==0)tmp2[il] = 0.0;
+	  tmp = 0.0;
 	  for(it=xid; it<ndt; it+=xlen){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
-		tmp2[il] += rowmat[head+itl]*d_zu[itt];
+		//tmp2[il] += rowmat[head+itl]*d_zu[itt];
+		tmp += rowmat[head+itl]*d_zu[itt];
 	  }
+	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset);
+	  if(xid==0)tmp2[il] = tmp;
 	}
 	head = a2[ip];
 	for(il=bid; il<kt; il+=blen){
@@ -274,8 +281,10 @@ __global__ void hmvm_cuda_hybrid1
 	printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
 #endif
 	head = a1[ip];
+	//__syncthreads();
+	if(ip==dense[0])printf("! %d %e + %f\n", 0, d_zaut[0], tmp);
 	for(il=bid; il<ndl; il+=blen){
-#if 1
+#if 0
 	  tmp = 0.0;
 	  ill=il+nstrtl-1;
 	  if(il==0&&ip==0&&xid==0)printf("* %d %f + %f\n", ill, d_zaut[ill], tmp);
@@ -288,7 +297,7 @@ __global__ void hmvm_cuda_hybrid1
 	  __syncthreads();
 	  if(il==0&&ip==0)printf("%d %f\n", threadIdx.x, tmp);
 	  __syncthreads();
-	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(tmp, offset, warpSize);
+	  for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
 	  __syncthreads();
 	  if(xid==0){
 		if(il==0&&ip==0)printf("-> %d %f + %f\n", ill, d_zaut[ill], tmp);
