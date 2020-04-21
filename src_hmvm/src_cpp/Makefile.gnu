@@ -10,9 +10,12 @@ CPP  = g++ -std=c++11
 CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
 #NVCC = /usr/local/cuda/bin/nvcc
 NVCC = nvcc
-# for Volta (Pascal mode)
+# for Volta
 NVCCFLAGS = -O3 -Xcompiler "-O3 -fopenmp" \
---generate-code arch=compute_60,code=sm_70
+--generate-code arch=compute_70,code=sm_70
+# for Volta (Pascal mode)
+#NVCCFLAGS = -g -lineinfo -O0 -Xcompiler "-O3 -fopenmp" \
+#--generate-code arch=compute_60,code=sm_70
 # for many GPUs
 #NVCCFLAGS = -O -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_53,code=sm_53 \
