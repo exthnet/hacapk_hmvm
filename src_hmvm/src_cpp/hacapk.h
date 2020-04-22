@@ -52,10 +52,5 @@ template <class T>void hmvm_cblas_s(matrix<T> *mat, matrix2<T> *mat2, T *b);
 template <class T>void hmvm_cblas_s_bench(matrix<T> *mat, matrix2<T> *mat2, T *b);
 #endif
 
-// cuda
-#ifdef _USE_CUDA
-//template <class T>void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel);
-#endif
-
 #endif
 

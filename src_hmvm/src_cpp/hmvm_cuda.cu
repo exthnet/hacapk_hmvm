@@ -218,7 +218,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==10)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div1_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div1_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,1,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -228,7 +228,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==11)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div2_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div2_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,2,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -238,7 +238,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==12)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div4_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div4_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,4,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -248,7 +248,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==13)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div8_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div8_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,8,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -258,7 +258,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==14)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div16_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div16_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,16,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -268,7 +268,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==15)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div32_shuffl_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div32_shuffl_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,32,0>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -279,7 +279,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==20)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div1_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div1_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,1,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -289,7 +289,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==21)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div2_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div2_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,2,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -299,37 +299,37 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   if(kernel==22)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div4_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div4_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,4,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	BENCH((hmvm_cuda_hybrid1<T,4,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1_hybrid1b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
-  if(kernel==22)
+  if(kernel==23)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div8_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div8_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,8,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	BENCH((hmvm_cuda_hybrid1<T,8,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1_hybrid1b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
-  if(kernel==22)
+  if(kernel==24)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div16_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div16_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,16,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	BENCH((hmvm_cuda_hybrid1<T,16,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
 	printf("TIME %d hmvm_cuda1_hybrid1b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
-  if(kernel==22)
+  if(kernel==25)
   {
 	char name[32], fname[64];
-	snprintf(name,32,"hybrid_div32_atomic_%d_%s", kernel, typeid(T).name());
+	snprintf(name,32,"hybrid1_div32_atomic_%d_%s", kernel, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	EXEC((hmvm_cuda_hybrid1<T,32,1>),d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T));
@@ -337,6 +337,68 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	printf("TIME %d hmvm_cuda1_hybrid1b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
+#if 1
+  if(kernel>=1000&&kernel<1192){
+	int subkernel = kernel-1000;
+	int DIV, MUL, ATOMIC;
+	ATOMIC = subkernel/96;
+	MUL = (subkernel%96)/6 + 1;
+	DIV = pow(2,subkernel%6);
+	char name[32], fname[64];
+	snprintf(name,32,"hybrid2_div%d_mul%d_atomic%d_%s", DIV, MUL, ATOMIC, typeid(T).name());
+	snprintf(fname,64,"result_cuda1_%s.txt", name);
+	printf("fname = %s\n", fname);
+	printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
+	// EXEC
+	{
+	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	}
+	// BENCH
+	{
+	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
+	}
+  }
+#endif
+
+#if 1
+  if(kernel>=2000&&kernel<2192){
+	int subkernel = kernel-2000;
+	int DIV, MUL, ATOMIC;
+	ATOMIC = subkernel/96;
+	MUL = (subkernel%96)/6 + 1;
+	DIV = pow(2,subkernel%6);
+	ATOMIC = 1; MUL = 1; DIV = 1; // test
+	char name[32], fname[64];
+	snprintf(name,32,"hybrid3_div%d_mul%d_atomic%d_%s", DIV, MUL, ATOMIC, typeid(T).name());
+	snprintf(fname,64,"result_cuda1_%s.txt", name);
+	printf("fname = %s\n", fname);
+	printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
+	// EXEC
+	{
+	  hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+								 (d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	}
+	// BENCH
+	if(0){
+	  hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+								 (d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
+	}
+  }
+#endif
   // ######## ######## ######## ######## ######## ######## ######## ########
   cudaFree(d_sm.ltmtx);
   cudaFree(d_sm.ndl);
