@@ -183,7 +183,10 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   davg /= (L-M);
 #endif
 
-  // sequential
+  /*
+	完全逐次
+	バリエーション：なし
+  */
   if(kernel==0)
   {
 	int a1, a2;
@@ -197,8 +200,12 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	printf("TIME %d hmvm_cuda1_seq%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
-  // block parallel
-  // whole hmvm calculation in 1 GPU kernel
+  /*
+	block並列化
+	ThreadBlockごとに1つの部分行列積(mat-mat-vecまたはmat-vec)を行う
+	ThreadBlock内部は逐次
+	バリエーション：なし
+  */
   if(kernel==1)
   {
 	int a1, a2;
@@ -212,9 +219,19 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	printf("TIME %d hmvm_cuda1_block%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
-  // block & thread parallel
-  // whole hmvm calculation in 1 GPU kernel
-  // under development
+/*
+  hybrid1
+  基本スレッド並列化カーネル
+  <<<napprox+ndense,32>>>
+  1 GEMV by 1 TB
+  1 line by 1/div WARP
+  バリエーション
+  - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
+  - a2t：a2を転置版で計算するか否か
+  - a2interchange：a2のループを入れ替えるか否か
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+*/
   if(kernel==10)
   {
 	char name[32], fname[64];
@@ -338,6 +355,20 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   }
 
 #if 1
+/*
+  hybrid2
+  複数WARP単一GEMV個別行カーネル
+  <<<napprox+ndense,32*mul>>>
+  1 GEMV by mul TB
+  1 line by 1/div WARP
+  バリエーション
+  - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
+  - mul：立ち上げるスレッド数(mul*32)、1つのmat-mat-vecまたはmat-vecをmul TBで実行、mul=1,2,3,...,
+  - a2t：a2を転置版で計算するか否か
+  - a2interchange：a2のループを入れ替えるか否か
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+*/
   if(kernel>=1000&&kernel<1192){
 	int subkernel = kernel-1000;
 	int DIV, MUL, ATOMIC;
@@ -369,13 +400,27 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 #endif
 
 #if 1
-  if(kernel>=2000&&kernel<2192){
+/*
+  hybrid3
+  複数WARP個別GEMVカーネル
+  <<<napprox/mul+ndense/mul, 32*mul>>>
+  1 GEMV by 1 WARP
+  1 line by 1/div WARP
+  バリエーション
+  - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
+  - mul：立ち上げるブロック数スレッド数の係数、1つのmat-mat-vecまたはmat-vecを1WARPで実行、mul=1,2,3,...,
+  - a2t：a2を転置版で計算するか否か
+  - a2interchange：a2のループを入れ替えるか否か
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+*/
+  if((kernel>=2000)&&(kernel<2192)){
 	int subkernel = kernel-2000;
 	int DIV, MUL, ATOMIC;
 	ATOMIC = subkernel/96;
 	MUL = (subkernel%96)/6 + 1;
 	DIV = pow(2,subkernel%6);
-	ATOMIC = 1; MUL = 1; DIV = 1; // test
+	//ATOMIC = 1; MUL = 1; DIV = 1; // test
 	char name[32], fname[64];
 	snprintf(name,32,"hybrid3_div%d_mul%d_atomic%d_%s", DIV, MUL, ATOMIC, typeid(T).name());
 	snprintf(fname,64,"result_cuda1_%s.txt", name);
@@ -387,7 +432,8 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
 								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
 								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-								 (d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	(d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	  //(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
 	}
 	// BENCH
 	if(0){

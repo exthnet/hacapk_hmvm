@@ -40,6 +40,7 @@ void hmvm_omp_1
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->submat[ip].ltmtx==1){
+#ifndef _SKIP_APPROX
 		kt=mat->submat[ip].kt;
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		for(il=0; il<kt; il++){
@@ -57,7 +58,9 @@ void hmvm_omp_1
 			zaut[ill] += mat->submat[ip].a2[itl]*zbut[il];
 		  }
 		}
+#endif
 	  } else if(mat->submat[ip].ltmtx==2){
+#ifndef _SKIP_DENSE
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
 		  for(it=0; it<ndt; it++){
@@ -66,6 +69,7 @@ void hmvm_omp_1
 			zaut[ill] += mat->submat[ip].a1[itl]*zu[itt];
 		  }
 		}
+#endif
 	  }
 	}
     for(il=ls-1;il<=le-1;il++){
@@ -110,6 +114,7 @@ void hmvm_omp_1t
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->submat[ip].ltmtx==1){
+#ifndef _SKIP_APPROX
 		kt=mat->submat[ip].kt;
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		for(il=0; il<kt; il++){
@@ -127,7 +132,9 @@ void hmvm_omp_1t
 			zaut[ill] += mat->submat[ip].a2t[itl]*zbut[it];
 		  }
 		}
+#endif
 	  } else if(mat->submat[ip].ltmtx==2){
+#ifndef _SKIP_DENSE
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
 		  for(it=0; it<ndt; it++){
@@ -136,6 +143,7 @@ void hmvm_omp_1t
 			zaut[ill] += mat->submat[ip].a1[itl]*zu[itt];
 		  }
 		}
+#endif
 	  }
 	}
     for(il=ls-1;il<=le-1;il++){
@@ -181,7 +189,7 @@ void hmvm_omp_2
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->ltmtx[ip]==1){
-#if 1
+#ifndef _SKIP_APPROX
 		kt=mat->kt[ip];
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		head=mat->a1[ip];
@@ -203,7 +211,7 @@ void hmvm_omp_2
 		}
 #endif
 	  } else if(mat->ltmtx[ip]==2){
-#if 1
+#ifndef _SKIP_DENSE
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
@@ -260,7 +268,7 @@ void hmvm_omp_2_atomic
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->ltmtx[ip]==1){
-#if 1
+#ifndef _SKIP_APPROX
 		kt=mat->kt[ip];
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		head=mat->a1[ip];
@@ -284,7 +292,7 @@ void hmvm_omp_2_atomic
 		}
 #endif
 	  } else if(mat->ltmtx[ip]==2){
-#if 1
+#ifndef _SKIP_DENSE
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  T tmp = (T)0.0;
@@ -348,6 +356,7 @@ void hmvm_omp_2t
 	  if(nstrtl+ndl-1>le)le=nstrtl+ndl-1;
 
 	  if(mat->ltmtx[ip]==1){
+#ifndef _SKIP_APPROX
 		kt=mat->kt[ip];
 		//for(il=0;il<kt;il++)zbut[il]=0.0;
 		head=mat->a1[ip];
@@ -367,7 +376,9 @@ void hmvm_omp_2t
 			zaut[ill] += mat->rowmat_t[head+itl]*zbut[it];
 		  }
 		}
-	  } else if(mat->ltmtx[ip]==2){
+#endif
+	  }else if(mat->ltmtx[ip]==2){
+#ifndef _SKIP_DENSE
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
@@ -377,6 +388,7 @@ void hmvm_omp_2t
 			zaut[ill] += mat->rowmat_t[head+itl]*zu[itt];
 		  }
 		}
+#endif
 	  }
 	}
     for(il=ls-1;il<=le-1;il++){

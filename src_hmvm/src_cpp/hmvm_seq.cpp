@@ -27,7 +27,7 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 	nstrtt = mat->submat[i].nstrtt;
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
-#if 1
+#ifndef _SKIP_APPROX
 	  for(j=0;j<kt;j++)tmp[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
@@ -45,7 +45,7 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 	  }
 #endif
 	}else{
-#if 1
+#ifndef _SKIP_DENSE
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
 		for(it=0;it<ndt;it++){
@@ -84,6 +84,7 @@ void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
 	nstrtt = mat->submat[i].nstrtt;
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
+#ifndef _SKIP_APPROX
 	  for(j=0;j<kt;j++)tmp[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
@@ -99,7 +100,9 @@ void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
 		  v[ill] += mat->submat[i].a2t[itl] * tmp[it];
 		}
 	  }
+#endif
 	}else{
+#ifndef _SKIP_DENSE
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
 		for(it=0;it<ndt;it++){
@@ -108,6 +111,7 @@ void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
 		  v[ill] += mat->submat[i].a1[itl] * b[itt];
 		}
 	  }
+#endif
 	}
   }
   free(tmp);
@@ -139,7 +143,7 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 	nstrtt = mat->nstrtt[i];
 	kt     = mat->kt[i];
 	if(ltmtx==1){
-#if 1
+#ifndef _SKIP_APPROX
 	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  head = mat->a1[i];
 	  for(il=0;il<kt;il++){
@@ -159,7 +163,7 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 	  }
 #endif
 	}else{
-#if 1
+#ifndef _SKIP_DENSE
 	  head = mat->a1[i];
 	  for(il=0;il<ndl;il++){
 		tmp = 0.0;
@@ -202,6 +206,7 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 	nstrtt = mat->nstrtt[i];
 	kt     = mat->kt[i];
 	if(ltmtx==1){
+#ifndef _SKIP_APPROX
 	  for(j=0;j<kt;j++)tmp[j]=0.0;
 	  head = mat->a1[i];
 	  for(il=0;il<kt;il++){
@@ -219,7 +224,9 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 		  v[ill] += mat->rowmat_t[head+itl] * tmp[it];
 		}
 	  }
+#endif
 	}else{
+#ifndef _SKIP_DENSE
 	  head = mat->a1[i];
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
@@ -229,6 +236,7 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 		  v[ill] += mat->rowmat_t[head+itl] * b[itt];
 		}
 	  }
+#endif
 	}
   }
   free(tmp);

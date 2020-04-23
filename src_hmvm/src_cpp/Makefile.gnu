@@ -1,5 +1,8 @@
 # -*- makefile -*-
 
+#OPTS=-D_SKIP_APPROX
+OPTS=-D_SKIP_DENSE
+
 # comment out if you don't want to use GPU
 ifndef GPU
 	GPU=0
@@ -46,9 +49,9 @@ HOBJS = hacapk.h
 #	$(LINK) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 .cpp.o: *.cpp $(HOBJS)
-	$(CPP) -c $(CCFLAGS)  $(INCS) $<
+	$(CPP) -c $(CCFLAGS)    $(INCS) $(OPTS) $<
 .cu.o: *.cu
-	$(NVCC) -c $(NVCCFLAGS) $(INCS) $<
+	$(NVCC) -c $(NVCCFLAGS) $(INCS) $(OPTS) $<
 
 all: $(TARGET)
 

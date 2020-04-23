@@ -86,11 +86,11 @@ int main(int argc, char **argv)
   hmvm_cuda1<double>(matD2, b, 23, dump_result); // 8
   hmvm_cuda1<double>(matD2, b, 24, dump_result); // 16
   hmvm_cuda1<double>(matD2, b, 25, dump_result); // 32
-
+  // hybrid2
   //for(i=0;i<192;i++)hmvm_cuda1<double>(matD2, b, 1000+i, dump_result); // DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=192patterns
   //hmvm_cuda1<double>(matD2, b, 999, dump_result);
-
-  hmvm_cuda1<double>(matD2, b, 2000, dump_result);
+  // hybrid3
+  for(i=0;i<192;i++)hmvm_cuda1<double>(matD2, b, 2000+i, dump_result); // DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=192patterns
 #endif
   delete [] b;//free(b);
 #endif
