@@ -9,6 +9,10 @@
 
 #include "hacapk.h"
 
+// できれば重複計算していないかチェックもしたい
+
+#define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
+
 namespace cg = cooperative_groups;
 
 #if __CUDA_ARCH__ < 600
@@ -234,9 +238,11 @@ template __global__ void hmvm_cuda_block<double>
 #if 1
 /*
   hybrid1
-  基本スレッド並列化カーネル
+  TBあたりスレッド数は32に固定
+  1TBが1つのPMVを担当
+  PMV内の1行を1/div WARPが担当
   <<<napprox+ndense,32>>>
-  1 GEMV by 1 TB
+  1 GEMV by 1 TB(=1WARP)
   1 line by 1/div WARP
   バリエーション
   - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
@@ -255,7 +261,7 @@ __global__ void hmvm_cuda_hybrid1
   printf("hmvm_cuda_hybrid1 : begin\n");
 #endif
   int gid   = blockIdx.x;
-  int tid   = threadIdx.x;
+  //int tid   = threadIdx.x;
   int bid   = threadIdx.x/(32/div);
   int blen  = div;
   int xid   = threadIdx.x%(32/div);
@@ -341,108 +347,88 @@ __global__ void hmvm_cuda_hybrid1
   printf("hmvm_cuda_hybrid1 : end\n");
 #endif
 }
-template __global__ void hmvm_cuda_hybrid1<float,1,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,2,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,4,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,8,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,16,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,32,0>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
 
-template __global__ void hmvm_cuda_hybrid1<float,1,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,2,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,4,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,8,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,16,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<float,32,1>
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
- int napprox, int *approx, int ndense, int *dense);
+template <class T>
+void hmvm_cuda_hybrid1_proxy
+(T *d_zaut, T *d_zu, int nlf, int ktmax,
+ int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt, int *a1, int *a2, T *rowmat,
+ int napprox, int *approx, int ndense, int *dense,
+ int blocks, int threads, int shms, int div, int atomic, T *v, T *b, int nd, char *fname, int bench)
+{
+#if 1
+  const int L=10, M=5;
+  FILE *F;
+  int i, l, lmax;
+  double d1, d2, dtimes[L], dmin, dmax, davg;
+  cudaError_t ret;
+  if(bench==0){lmax=1;}else{lmax=L;}
+  for(l=0;l<lmax;l++){
+	for(i=0;i<nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	cudaDeviceSynchronize();
+	d1 = omp_get_wtime();
+	switch(atomic){
+	case 0:
+	  switch(div){
+	  case  1: hmvm_cuda_hybrid1<T, 1,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  2: hmvm_cuda_hybrid1<T, 2,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  4: hmvm_cuda_hybrid1<T, 4,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  8: hmvm_cuda_hybrid1<T, 8,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case 16: hmvm_cuda_hybrid1<T,16,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case 32: hmvm_cuda_hybrid1<T,32,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  }
+	  break;
+	case 1:
+	  switch(div){
+	  case  1: hmvm_cuda_hybrid1<T, 1,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  2: hmvm_cuda_hybrid1<T, 2,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  4: hmvm_cuda_hybrid1<T, 4,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case  8: hmvm_cuda_hybrid1<T, 8,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case 16: hmvm_cuda_hybrid1<T,16,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  case 32: hmvm_cuda_hybrid1<T,32,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense); break;
+	  }
+	  break;
+	}
+	cudaDeviceSynchronize();
+	d2 = omp_get_wtime();
+	dtimes[l] = d2-d1;
+  }
+  if(bench==0){
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	printf("write to %s\n", fname);
+	F = fopen(fname, "w");
+	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	fclose(F);
+  }else{
+	dmin = 9999.99;
+	dmax = 0.0;
+	davg = 0.0;
+	for(i=M;i<L;i++){
+	  davg += dtimes[i];
+	  if(dmin>dtimes[i])dmin=dtimes[i];
+	  if(dmax<dtimes[i])dmax=dtimes[i];
+	}
+	davg /= (L-M);
+	printf("TIME %d hmvm_cuda1_hybrid1b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+  }
+#endif
+}
 
-template __global__ void hmvm_cuda_hybrid1<double,1,0>
+template
+void hmvm_cuda_hybrid1_proxy<float>
+(float *d_zaut, float *d_zu, int nlf, int ktmax,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, float *rowmat,
+ int napprox, int *approx, int ndense, int *dense,
+ int blocks, int threads, int shms, int div, int atomic, float *v, float *b, int nd, char *fname, int bench);
+template
+void hmvm_cuda_hybrid1_proxy<double>
 (double *d_zaut, double *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,2,0>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,4,0>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,8,0>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,16,0>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,32,0>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-
-template __global__ void hmvm_cuda_hybrid1<double,1,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,2,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,4,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,8,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,16,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
-template __global__ void hmvm_cuda_hybrid1<double,32,1>
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, double *rowmat,
- int napprox, int *approx, int ndense, int *dense);
+ int napprox, int *approx, int ndense, int *dense,
+ int blocks, int threads, int shms, int div, int atomic, double *v, double *b, int nd, char *fname, int bench);
 // ######## ######## ######## ######## ######## ######## ######## ########
 #endif
-
 
 /*
 template __global__ void hmvm_cuda_hybrid2<float,DIV,MUL,ATOMIC>
@@ -486,15 +472,16 @@ done
 done
 */
 
-#define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
-
 #if 1
 // ######## ######## ######## ######## ######## ######## ######## ########
 /*
   hybrid2
   複数WARP単一GEMV個別行カーネル
+  1PMVを担当するのは1TBのまま
+  1TBあたりスレッド数を32*mulに増やす
+  PMV内の1行を1/div WARPが担当
   <<<napprox+ndense,32*mul>>>
-  1 GEMV by mul TB
+  1 PMV by 1 TB
   1 line by 1/div WARP
   バリエーション
   - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
@@ -514,9 +501,9 @@ __global__ void hmvm_cuda_hybrid2
   printf("hmvm_cuda_hybrid2 : begin\n");
 #endif
   int gid   = blockIdx.x;
-  int tid   = threadIdx.x;
+  //int tid   = threadIdx.x;
   int bid   = threadIdx.x/(32/div);
-  int blen  = div*mul;
+  int blen  = mul*div;
   int xid   = threadIdx.x%(32/div);
   int xlen  = (32/div);
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
@@ -542,8 +529,8 @@ __global__ void hmvm_cuda_hybrid2
 #endif
 	head = a1[ip];
 	for(il=bid; il<kt; il+=blen){
-	if(xid==0)tmp2[il] = 0.0;
-	tmp = 0.0;
+	  if(xid==0)tmp2[il] = 0.0;
+	  tmp = 0.0;
 	  for(it=xid; it<ndt; it+=xlen){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
@@ -562,7 +549,7 @@ __global__ void hmvm_cuda_hybrid2
 	  }
 	}
 #endif // approx
-  }else{
+  }else if(gid-napprox<ndense){
 #ifndef _SKIP_DENSE
 	// dense
 	ip = dense[gid-napprox];
@@ -665,96 +652,8 @@ void hmvm_cuda_hybrid2_proxy
 	printf("TIME %d hmvm_cuda1_hybrid2b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 #endif
-#if 0
-  if(bench==0){
-	// single execution and check result
-	FILE *F;
-	int i, l;
-	cudaError_t ret;
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
-	cudaDeviceSynchronize();
-	d1 = omp_get_wtime();
-	switch(atomic){
-	case 0:
-	  switch(div){
-	  case  1: hmvm_cuda_hybrid2<T, 1,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  2: hmvm_cuda_hybrid2<T, 2,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  4: hmvm_cuda_hybrid2<T, 4,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  8: hmvm_cuda_hybrid2<T, 8,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 16: hmvm_cuda_hybrid2<T,16,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 32: hmvm_cuda_hybrid2<T,32,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  }
-	  break;
-	case 1:
-	  switch(div){
-	  case  1: hmvm_cuda_hybrid2<T, 1,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  2: hmvm_cuda_hybrid2<T, 2,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  4: hmvm_cuda_hybrid2<T, 4,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  8: hmvm_cuda_hybrid2<T, 8,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 16: hmvm_cuda_hybrid2<T,16,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 32: hmvm_cuda_hybrid2<T,32,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  }
-	  break;
-	}
-	cudaDeviceSynchronize();
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
-	printf("write to %s\n", fname);
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }else{
-	// benchmark
-	const int L=10, M=5;
-	int i, l;
-	double d1, d2, dtimes[L], dmin, dmax, davg;
-	cudaError_t ret;
-	for(l=0;l<L;l++){
-	  for(i=0;i<nd;i++)v[i] = (T)0.0;
-	  CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	  CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
-	  cudaDeviceSynchronize();
-	  d1 = omp_get_wtime();
-	  switch(atomic){
-	  case 0:
-		switch(div){
-		case  1: hmvm_cuda_hybrid2<T, 1,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  2: hmvm_cuda_hybrid2<T, 2,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  4: hmvm_cuda_hybrid2<T, 4,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  8: hmvm_cuda_hybrid2<T, 8,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 16: hmvm_cuda_hybrid2<T,16,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 32: hmvm_cuda_hybrid2<T,32,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		}
-		break;
-	  case 1:
-		switch(div){
-		case  1: hmvm_cuda_hybrid2<T, 1,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  2: hmvm_cuda_hybrid2<T, 2,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  4: hmvm_cuda_hybrid2<T, 4,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  8: hmvm_cuda_hybrid2<T, 8,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 16: hmvm_cuda_hybrid2<T,16,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 32: hmvm_cuda_hybrid2<T,32,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		}
-		break;
-	  }
-	  cudaDeviceSynchronize();
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=M;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-M);
-	printf("TIME %d hmvm_cuda1_hybrid2b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
-  }
-#endif
 }
+
 template
 void hmvm_cuda_hybrid2_proxy<float>
 (float *d_zaut, float *d_zu, int nlf, int ktmax,
@@ -775,8 +674,11 @@ void hmvm_cuda_hybrid2_proxy<double>
 /*
   hybrid3
   複数WARP個別GEMVカーネル
+  1PMVを1WARPが担当
+  1TBあたりスレッド数は32*mul(mul WARP)
+  PMV内の1行を1/div WARPが担当
   <<<napprox/mul+ndense/mul, 32*mul>>>
-  1 GEMV by 1 WARP
+  1 PMV by 1 WARP
   1 line by 1/div WARP
   バリエーション
   - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
@@ -789,16 +691,16 @@ void hmvm_cuda_hybrid2_proxy<double>
 template <class T, int div, int atomic>
 __global__ void hmvm_cuda_hybrid3
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
-int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
-int napprox, int *approx, int ndense, int *dense, int mul)
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat,
+ int napprox, int *approx, int ndense, int *dense, int mul)
 {
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cuda_hybrid3 : begin\n");
 #endif
-  int gid   = blockIdx.x;
-  int tid   = threadIdx.x;
-  int bid   = (threadIdx.x%32)/(32/div);
-  int blen  = div*mul;
+  int gid   = blockIdx.x*mul+threadIdx.x/32;
+  //int tid   = threadIdx.x;
+  int bid   = ((threadIdx.x/mul)/32)/div;
+  int blen  = div;
   int xid   = threadIdx.x%(32/div);
   int xlen  = (32/div);
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
@@ -808,48 +710,49 @@ int napprox, int *approx, int ndense, int *dense, int mul)
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
   cg::thread_block_tile<32/div> g = cg::tiled_partition<32/div>(cg::this_thread_block());
-  int id;
 
 #if 1
-  id = gid*mul + tid/32;
-  if(id<napprox){
+  if(gid<((napprox+mul-1)/mul)){
 #ifndef _SKIP_APPROX
-	// approx
-	ip = approx[id];
-	ndl = _ndl[ip];
-	ndt = _ndt[ip];
-	nstrtl = _nstrtl[ip];
-	nstrtt = _nstrtt[ip];
-	ltmtx = _ltmtx[ip];
-	kt = _kt[ip];
+	if(gid<napprox){
+	  // approx
+	  ip = approx[gid];
+	  ndl = _ndl[ip];
+	  ndt = _ndt[ip];
+	  nstrtl = _nstrtl[ip];
+	  nstrtt = _nstrtt[ip];
+	  ltmtx = _ltmtx[ip];
+	  kt = _kt[ip];
 #if _DEBUG_LEVEL >= 3
-	printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
 #endif
-	head = a1[ip];
-	for(il=bid; il<kt; il+=blen){
-	  if(xid==0)tmp2[il] = 0.0;
-	  tmp = 0.0;
-	  for(it=xid; it<ndt; it+=xlen){
-		itt=it+nstrtt-1;
-		itl=it+il*ndt;
-		tmp += rowmat[head+itl]*d_zu[itt];
-	  }
-	  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
-	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
-	  if(xid==0)tmp2[il] = tmp;
-	}
-	head = a2[ip];
-	for(il=bid; il<kt; il+=blen){
-	  for(it=xid; it<ndl; it+=xlen){
-		ill=it+nstrtl-1;
-		itl=it+il*ndl;
-		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
-	  }
-	}
+	  head = a1[ip];
+	  for(il=bid; il<kt; il+=blen){
+  	    if(xid==0)tmp2[il] = 0.0;
+		tmp = 0.0;
+		for(it=xid; it<ndt; it+=xlen){
+	      itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp += rowmat[head+itl]*d_zu[itt];
+        }
+		//for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
+		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+		if(xid==0)tmp2[il] = tmp;
+      }
+	  head = a2[ip];
+	  for(il=bid; il<kt; il+=blen){
+	    for(it=xid; it<ndl; it+=xlen){
+	      ill=it+nstrtl-1;
+		  itl=it+il*ndl;
+		  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+        }
+      }
+    }
 #endif // approx
-  }else if(id<napprox+ndense){
+  }else{
 #ifndef _SKIP_DENSE
-	ip = dense[id-napprox];
+	if(gid-((napprox+mul-1)/mul)<ndense){
+	ip = dense[gid-((napprox+mul-1)/mul)];
 	ndl = _ndl[ip];
 	ndt = _ndt[ip];
 	nstrtl = _nstrtl[ip];
@@ -876,6 +779,7 @@ int napprox, int *approx, int ndense, int *dense, int mul)
       }else{
   	    atomicAdd(&d_zaut[ill], tmp);
       }
+    }
     }
 #endif // dense
   }
@@ -950,95 +854,8 @@ void hmvm_cuda_hybrid3_proxy
 	printf("TIME %d hmvm_cuda1_hybrid3b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 #endif
-#if 0
-  if(bench==0){
-	// single execution and check result
-	FILE *F;
-	int i, l;
-	cudaError_t ret;
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
-	cudaDeviceSynchronize();
-	switch(atomic){
-	case 0:
-	  switch(div){
-	  case  1: hmvm_cuda_hybrid3<T, 1,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  2: hmvm_cuda_hybrid3<T, 2,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  4: hmvm_cuda_hybrid3<T, 4,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  8: hmvm_cuda_hybrid3<T, 8,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 16: hmvm_cuda_hybrid3<T,16,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 32: hmvm_cuda_hybrid3<T,32,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  }
-	  break;
-	case 1:
-	  switch(div){
-	  case  1: hmvm_cuda_hybrid3<T, 1,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  2: hmvm_cuda_hybrid3<T, 2,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  4: hmvm_cuda_hybrid3<T, 4,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case  8: hmvm_cuda_hybrid3<T, 8,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 16: hmvm_cuda_hybrid3<T,16,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  case 32: hmvm_cuda_hybrid3<T,32,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-	  }
-	  break;
-	}
-	cudaDeviceSynchronize();
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
-	printf("write to %s\n", fname);
-	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	fclose(F);
-  }else{
-	// benchamrk
-	const int L=10, M=5;
-	int i, l;
-	double d1, d2, dtimes[L], dmin, dmax, davg;
-	cudaError_t ret;
-	for(l=0;l<L;l++){
-	  for(i=0;i<nd;i++)v[i] = (T)0.0;
-	  CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	  CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
-	  cudaDeviceSynchronize();
-	  d1 = omp_get_wtime();
-	  switch(atomic){
-	  case 0:
-		switch(div){
-		case  1: hmvm_cuda_hybrid3<T, 1,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  2: hmvm_cuda_hybrid3<T, 2,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  4: hmvm_cuda_hybrid3<T, 4,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  8: hmvm_cuda_hybrid3<T, 8,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 16: hmvm_cuda_hybrid3<T,16,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 32: hmvm_cuda_hybrid3<T,32,0><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		}
-		break;
-	  case 1:
-		switch(div){
-		case  1: hmvm_cuda_hybrid3<T, 1,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  2: hmvm_cuda_hybrid3<T, 2,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  4: hmvm_cuda_hybrid3<T, 4,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case  8: hmvm_cuda_hybrid3<T, 8,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 16: hmvm_cuda_hybrid3<T,16,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		case 32: hmvm_cuda_hybrid3<T,32,1><<<blocks,threads,shms>>>(d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, napprox, approx, ndense, dense, mul); break;
-		}
-		break;
-	  }
-	  cudaDeviceSynchronize();
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=M;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-M);
-	printf("TIME %d hmvm_cuda1_hybrid3b%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
-  }
-#endif
 }
+
 template
 void hmvm_cuda_hybrid3_proxy<float>
 (float *d_zaut, float *d_zu, int nlf, int ktmax,

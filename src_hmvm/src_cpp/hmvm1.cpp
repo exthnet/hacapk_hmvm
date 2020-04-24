@@ -74,23 +74,12 @@ int main(int argc, char **argv)
   hmvm_cuda1<double>(matD2, b, 0, dump_result);
   hmvm_cuda1<double>(matD2, b, 1, dump_result);
   hmvm_cuda1<double>(matD2, b, 2, dump_result);
-  hmvm_cuda1<double>(matD2, b, 10, dump_result); // 1
-  hmvm_cuda1<double>(matD2, b, 11, dump_result); // 2
-  hmvm_cuda1<double>(matD2, b, 12, dump_result); // 4
-  hmvm_cuda1<double>(matD2, b, 13, dump_result); // 8
-  hmvm_cuda1<double>(matD2, b, 14, dump_result); // 16
-  hmvm_cuda1<double>(matD2, b, 15, dump_result); // 32
-  hmvm_cuda1<double>(matD2, b, 20, dump_result); // 1
-  hmvm_cuda1<double>(matD2, b, 21, dump_result); // 2
-  hmvm_cuda1<double>(matD2, b, 22, dump_result); // 4
-  hmvm_cuda1<double>(matD2, b, 23, dump_result); // 8
-  hmvm_cuda1<double>(matD2, b, 24, dump_result); // 16
-  hmvm_cuda1<double>(matD2, b, 25, dump_result); // 32
+  // hybrid1
+  for(i=0;i<12;i++)hmvm_cuda1<double>(matD2, b, 1000+i, dump_result); // DIV(1,2,4,8,16,32), ATOMIC(1,2)=12patterns
   // hybrid2
-  //for(i=0;i<192;i++)hmvm_cuda1<double>(matD2, b, 1000+i, dump_result); // DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=192patterns
-  //hmvm_cuda1<double>(matD2, b, 999, dump_result);
-  // hybrid3
   for(i=0;i<192;i++)hmvm_cuda1<double>(matD2, b, 2000+i, dump_result); // DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=192patterns
+  // hybrid3
+  for(i=0;i<192;i++)hmvm_cuda1<double>(matD2, b, 3000+i, dump_result); // DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=192patterns
 #endif
   delete [] b;//free(b);
 #endif
