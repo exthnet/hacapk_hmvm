@@ -698,10 +698,9 @@ __global__ void hmvm_cuda_hybrid3
   printf("hmvm_cuda_hybrid3 : begin\n");
 #endif
   int gid   = blockIdx.x*mul+threadIdx.x/32;
-  //int tid   = threadIdx.x;
-  int bid   = ((threadIdx.x/mul)/32)/div;
-  int blen  = div;
-  int xid   = threadIdx.x%(32/div);
+  int bid   = ((threadIdx.x%32)/(32/div));
+  int blen  = (32/(32/div));
+  int xid   = (threadIdx.x%(32/div));
   int xlen  = (32/div);
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
@@ -711,48 +710,47 @@ __global__ void hmvm_cuda_hybrid3
   T *tmp2 = reinterpret_cast<T *>(my_smem);
   cg::thread_block_tile<32/div> g = cg::tiled_partition<32/div>(cg::this_thread_block());
 
-#if 1
-  if(gid<((napprox+mul-1)/mul)){
-#ifndef _SKIP_APPROX
-	if(gid<napprox){
-	  // approx
-	  ip = approx[gid];
-	  ndl = _ndl[ip];
-	  ndt = _ndt[ip];
-	  nstrtl = _nstrtl[ip];
-	  nstrtt = _nstrtt[ip];
-	  ltmtx = _ltmtx[ip];
-	  kt = _kt[ip];
+#if 0
+  if(gid<napprox){
+	// approx
+	ip = approx[gid];
+	ndl = _ndl[ip];
+	ndt = _ndt[ip];
+	nstrtl = _nstrtl[ip];
+	nstrtt = _nstrtt[ip];
+	ltmtx = _ltmtx[ip];
+	kt = _kt[ip];
 #if _DEBUG_LEVEL >= 3
-	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+	printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
 #endif
-	  head = a1[ip];
-	  for(il=bid; il<kt; il+=blen){
-  	    if(xid==0)tmp2[il] = 0.0;
-		tmp = 0.0;
-		for(it=xid; it<ndt; it+=xlen){
-	      itt=it+nstrtt-1;
-		  itl=it+il*ndt;
-		  tmp += rowmat[head+itl]*d_zu[itt];
-        }
-		//for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
-		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
-		if(xid==0)tmp2[il] = tmp;
-      }
-	  head = a2[ip];
-	  for(il=bid; il<kt; il+=blen){
-	    for(it=xid; it<ndl; it+=xlen){
-	      ill=it+nstrtl-1;
-		  itl=it+il*ndl;
-		  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
-        }
-      }
-    }
-#endif // approx
-  }else{
-#ifndef _SKIP_DENSE
-	if(gid-((napprox+mul-1)/mul)<ndense){
-	ip = dense[gid-((napprox+mul-1)/mul)];
+	head = a1[ip];
+	for(il=bid; il<kt; il+=blen){
+	  if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = 0.0;
+	  tmp = 0.0;
+	  for(it=xid; it<ndt; it+=xlen){
+		itt=it+nstrtt-1;
+		itl=it+il*ndt;
+		tmp += rowmat[head+itl]*d_zu[itt];
+	  }
+	  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
+	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+	  if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = tmp;
+	}
+	head = a2[ip];
+	for(il=bid; il<kt; il+=blen){
+	  for(it=xid; it<ndl; it+=xlen){
+		ill=it+nstrtl-1;
+		itl=it+il*ndl;
+		myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
+	  }
+	}
+  }
+#endif
+
+#if 0
+  //ip = dense[gid-((napprox+mul-1)/mul)];
+  if(gid < ndense){
+	ip = dense[gid];
 	ndl = _ndl[ip];
 	ndt = _ndt[ip];
 	nstrtl = _nstrtl[ip];
@@ -780,10 +778,85 @@ __global__ void hmvm_cuda_hybrid3
   	    atomicAdd(&d_zaut[ill], tmp);
       }
     }
+  }
+#endif
+
+#if 1
+  if(gid<((napprox+mul-1)/mul)*mul){
+#ifndef _SKIP_APPROX
+	if(gid<napprox){
+	  // approx
+	  ip = approx[gid];
+	  ndl = _ndl[ip];
+	  ndt = _ndt[ip];
+	  nstrtl = _nstrtl[ip];
+	  nstrtt = _nstrtt[ip];
+	  ltmtx = _ltmtx[ip];
+	  kt = _kt[ip];
+#if _DEBUG_LEVEL >= 3
+	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+#endif
+	  head = a1[ip];
+	  for(il=bid; il<kt; il+=blen){
+  	    if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = 0.0;
+		tmp = 0.0;
+		for(it=xid; it<ndt; it+=xlen){
+	      itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp += rowmat[head+itl]*d_zu[itt];
+        }
+		//for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
+		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+		if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = tmp;
+      }
+	  head = a2[ip];
+	  for(il=bid; il<kt; il+=blen){
+	    for(it=xid; it<ndl; it+=xlen){
+	      ill=it+nstrtl-1;
+		  itl=it+il*ndl;
+		  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
+        }
+      }
     }
+#endif // approx
+  }else{
+#ifndef _SKIP_DENSE
+	ip = gid-((napprox+mul-1)/mul)*mul;
+    if(ip<ndense){
+	  ip = dense[ip];
+	  ndl = _ndl[ip];
+	  ndt = _ndt[ip];
+	  nstrtl = _nstrtl[ip];
+	  nstrtt = _nstrtt[ip];
+	  ltmtx = _ltmtx[ip];
+#if _DEBUG_LEVEL >= 3
+	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+#endif
+	  head = a1[ip];
+	  for(il=bid; il<ndl; il+=blen){
+		tmp = 0.0;
+		ill=il+nstrtl-1;
+		for(it=xid; it<ndt; it+=xlen){
+		  itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp += rowmat[head+itl]*d_zu[itt];
+		}
+		if(atomic==0){
+		  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down(tmp, offset);
+		  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+		  if(xid==0){
+			atomicAdd(&d_zaut[ill], tmp);
+		  }
+		}else{
+		  atomicAdd(&d_zaut[ill], tmp);
+		}
+	  }
+	}
 #endif // dense
   }
 #endif
+
+
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cuda_hybrid3 : end\n");
 #endif

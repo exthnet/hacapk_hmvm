@@ -1,7 +1,7 @@
 # -*- makefile -*-
 
 #OPTS=-D_SKIP_APPROX
-OPTS=-D_SKIP_DENSE
+#OPTS=-D_SKIP_DENSE
 
 # comment out if you don't want to use GPU
 ifndef GPU

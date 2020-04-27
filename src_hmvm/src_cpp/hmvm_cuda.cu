@@ -310,6 +310,9 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 /*
   hybrid3
   複数WARP個別GEMVカーネル
+  1PMVを1WARPが担当
+  1TBあたりスレッド数は32*mul(mul WARP)
+  PMV内の1行を1/div WARPが担当
   <<<napprox/mul+ndense/mul, 32*mul>>>
   1 GEMV by 1 WARP
   1 line by 1/div WARP
@@ -339,7 +342,8 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
 	d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
 	d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	(d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	(d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	//(d_sm.napprox+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
 	//(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
 	}
 	// BENCH
