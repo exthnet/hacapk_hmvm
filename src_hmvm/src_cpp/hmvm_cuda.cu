@@ -7,7 +7,7 @@
 #include <cuda_runtime_api.h>
 
 #include "hacapk.h"
-#include "hmvm_cuda_kernels.h"
+#include "hmvm_cuda_kernels.cu"
 
 #define CHECK_DO(act,msg) {ret=act; if(ret!=cudaSuccess){printf("%s failed\n",msg);exit(-1);};}
 
@@ -25,7 +25,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   int ip;
   int len;
   cudaError_t ret;
-  printf("hmvm_cuda1_%s: begin\n", typeid(T).name());
+  printf("hmvm_cuda1_%s: begin\n", typeid(T).name()); fflush(stdout);
   v    = new T[nd];    //(double*)malloc(sizeof(double)*mat2->nd);
   tmp  = new T[ktmax]; //(double*)malloc(sizeof(double)*mat2->ktmax);
   zero = new T[ktmax]; //(double*)malloc(sizeof(double)*mat2->ktmax);
@@ -91,6 +91,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   d_sm.ndense  = mat2->ndense;
   printf("end splitting (napprox=%d, ndense=%d)\n", mat2->napprox, mat2->ndense);
 
+#if 0
 #define EXEC(FUNCNAME,BLOCKS,THREADS,S)									\
   for(i=0;i<nd;i++)v[i] = (T)0.0;										\
   CHECK_DO(cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v"); \
@@ -99,7 +100,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   FUNCNAME<<<BLOCKS,THREADS,S>>>										\
 	(d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
 	 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,			\
-	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
+	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,				\
 	 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
   cudaDeviceSynchronize();												\
   CHECK_DO(cudaMemcpy(v, d_v, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v"); \
@@ -109,33 +110,6 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   fclose(F);
 
 #define BENCH(FUNCNAME,BLOCKS,THREADS,S)
-#if 0
-#define BENCH(FUNCNAME,BLOCKS,THREADS,S)								\
-  for(l=0;l<L;l++){														\
-	for(i=0;i<nd;i++)v[i] = (T)0.0;										\
-	CHECK_DO(cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v"); \
-	CHECK_DO(cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b"); \
-	cudaDeviceSynchronize();											\
-	d1 = omp_get_wtime();												\
-	FUNCNAME<<<BLOCKS,THREADS,S>>>										\
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,		\
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
-	cudaDeviceSynchronize();											\
-	d2 = omp_get_wtime();												\
-	dtimes[l] = d2-d1;													\
-  }																		\
-  dmin = 9999.99;														\
-  dmax = 0.0;															\
-  davg = 0.0;															\
-  for(i=M;i<L;i++){														\
-	davg += dtimes[i];													\
-	if(dmin>dtimes[i])dmin=dtimes[i];									\
-	if(dmax<dtimes[i])dmax=dtimes[i];									\
-  }																		\
-  davg /= (L-M);
-#endif
 
 #define EXEC2(FUNCNAME,BLOCKS,THREADS,S,DIV,OPT)							\
   for(i=0;i<nd;i++)v[i] = (T)0.0;										\
@@ -145,7 +119,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   FUNCNAME<T,DIV,OPT><<<BLOCKS,THREADS,S>>>							\
 	(d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
 	 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,			\
-	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
+	 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,	\
 	 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
   cudaDeviceSynchronize();												\
   CHECK_DO(cudaMemcpy(v, d_v, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v"); \
@@ -155,48 +129,40 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   fclose(F);
 
 #define BENCH2(FUNCNAME,BLOCKS,THREADS,S,DIV,OPT)
-#if 0
-#define BENCH2(FUNCNAME,BLOCKS,THREADS,S,DIV,OPT)							\
-  for(l=0;l<L;l++){														\
-	for(i=0;i<nd;i++)v[i] = (T)0.0;										\
-	CHECK_DO(cudaMemcpy(d_v, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v"); \
-	CHECK_DO(cudaMemcpy(d_b, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b"); \
-	cudaDeviceSynchronize();											\
-	d1 = omp_get_wtime();												\
-	FUNCNAME<T,DIV,OPT><<<BLOCKS,THREADS,S>>>						\
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,									\
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,		\
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,							\
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense);				\
-	cudaDeviceSynchronize();											\
-	d2 = omp_get_wtime();												\
-	dtimes[l] = d2-d1;													\
-  }																		\
-  dmin = 9999.99;														\
-  dmax = 0.0;															\
-  davg = 0.0;															\
-  for(i=M;i<L;i++){														\
-	davg += dtimes[i];													\
-	if(dmin>dtimes[i])dmin=dtimes[i];									\
-	if(dmax<dtimes[i])dmax=dtimes[i];									\
-  }																		\
-  davg /= (L-M);
 #endif
 
   /*
 	完全逐次
-	バリエーション：なし
+	バリエーション：
+	- a2trans：approxy2を転置版で計算するか否か(0,1)
+	- a2interchange：approxy2のループを入れ替えるか否か(0,1)
   */
-  if(kernel==0)
+  if(kernel>=0 && kernel<10)
   {
-	int a1, a2;
-	char name[8], fname[0xff];
-	a1=a2=0;
-	snprintf(name,8,"_%d_%d",a1,a2);
-	snprintf(fname,32,"result_cuda1_seq%s_%s.txt", name, typeid(T).name());
+	int subkernel = kernel;
+	int a2t, a2i;
+	a2t = subkernel%2;
+	a2i = (subkernel/2)%2;
+	char name[64], fname[128];
+	snprintf(name,64,"seq_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(fname,128,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
-	EXEC(hmvm_cuda_seq,1,1,d_sm.ktmax*sizeof(T));
-	BENCH(hmvm_cuda_seq,1,1,d_sm.ktmax*sizeof(T));
+	// EXEC
+	//EXEC((hmvm_cuda_seq<T,1,1>),1,1,d_sm.ktmax*sizeof(T));
+	hmvm_cuda_seq_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   v, b, nd, fname, 0,
+	   a2t, a2i);
+	if(0)hmvm_cuda_seq_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   v, b, nd, fname, 5,
+	   a2t, a2i);
 	printf("TIME %d hmvm_cuda1_seq%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
@@ -204,60 +170,86 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	block並列化
 	ThreadBlockごとに1つの部分行列積(mat-mat-vecまたはmat-vec)を行う
 	ThreadBlock内部は逐次
-	バリエーション：なし
+	- a2trans：approxy2を転置版で計算するか否か(0,1)
+	- a2interchange：approxy2のループを入れ替えるか否か(0,1)
   */
-  if(kernel==1)
+  if(kernel>=10 && kernel<20)
   {
-	int a1, a2;
-	char name[8], fname[32];
-	a1=a2=0;
-	snprintf(name,8,"_%d_%d",a1,a2);
-	snprintf(fname,32,"result_cuda1_block%s_%s.txt", name, typeid(T).name());
+	int subkernel = kernel;
+	int a2t, a2i;
+	a2t = subkernel%2;
+	a2i = (subkernel/2)%2;
+	char name[64], fname[128];
+	snprintf(name,64,"block_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(fname,128,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
-	EXEC(hmvm_cuda_block,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
-	BENCH(hmvm_cuda_block,d_sm.napprox+d_sm.ndense,1,d_sm.ktmax*sizeof(T));
+	// EXEC
+	//EXEC((hmvm_cuda_seq<T,1,1>),1,1,d_sm.ktmax*sizeof(T));
+	hmvm_cuda_block_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   v, b, nd, fname, 0,
+	   a2t, a2i);
+	if(0)hmvm_cuda_block_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   v, b, nd, fname, 5,
+	   a2t, a2i);
 	printf("TIME %d hmvm_cuda1_block%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
 
 /*
   hybrid1
   基本スレッド並列化カーネル
+  1PMVを1TB(32Thread=1WARP)で計算する
+  1行を1/div WARPで計算する
   <<<napprox+ndense,32>>>
   1 GEMV by 1 TB
   1 line by 1/div WARP
   バリエーション
   - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
-  - a2t：a2を転置版で計算するか否か
-  - a2interchange：a2のループを入れ替えるか否か
-  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
-  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+  - a2t：a2を転置版で計算するか否か(0,1)
+  - a2interchange：a2のループを入れ替えるか否か(0,1)
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか(0,1)
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか(0,1)
+  6x2x2x2x2=96通り
 */
-  if(kernel>=1000&&kernel<1012){
+  if(kernel>=1000&&kernel<1096){
 	int subkernel = kernel-1000;
-	int DIV, MUL, ATOMIC;
-	ATOMIC = subkernel/6;
-	DIV = pow(2,subkernel%6);
-	char name[32], fname[64];
-	snprintf(name,32,"hybrid1_div%d_atomic%d_%s", DIV, ATOMIC, typeid(T).name());
-	snprintf(fname,64,"result_cuda1_%s.txt", name);
+	int DIV, ATOMIC, a2t, a2i, aa, da;
+	DIV = subkernel%6;
+	ATOMIC = (subkernel/6)%2;
+	a2t = ((subkernel/6)/2)%2;
+	a2i = (((subkernel/6)/2)/2)%2;
+	aa = ((((subkernel/6)/2)/2)/2)%2;
+	da = (((((subkernel/6)/2)/2)/2)/2)%2;
+	DIV = pow(2,DIV);
+	char name[64], fname[128];
+	snprintf(name,64,"hybrid1_div%d_atomic%d_a2t%d_a2i%d_aa%d_da%d%s", DIV, ATOMIC, a2t, a2i, aa, da, typeid(T).name());
+	snprintf(fname,128,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
-	printf("DIV = %d, ATOMIC = %d\n", DIV, ATOMIC);
 	// EXEC
-	{
-	  hmvm_cuda_hybrid1_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
-								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-								 d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T),DIV,ATOMIC, v, b, nd, fname, 0);
-	}
+	hmvm_cuda_hybrid1_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T),
+	   v, b, nd, fname, 0,
+	   DIV,a2t,a2i,aa,da);
 	// BENCH
-	{
-	  hmvm_cuda_hybrid1_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
-								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-								 d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T),DIV,ATOMIC, v, b, nd, fname, 1);
-	}
+	/*
+	hmvm_cuda_hybrid1_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+							   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+							   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+							   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+							   d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T), v, b, nd, fname, 5,
+							   DIV, ATOMIC, a2t, a2i, aa, da);
+	*/
   }
 
 #if 1
@@ -291,7 +283,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	{
 	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
 								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
 	}
@@ -299,7 +291,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	{
 	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
 								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
 	}
@@ -340,7 +332,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	{
     hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+	d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 	d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 	(d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
 	//(d_sm.napprox+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
@@ -350,12 +342,55 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	if(0){
 	  hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
 								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat,
+								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 								 (d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
 	}
   }
 #endif
+
+
+#if 1
+/*
+  hybrid4
+  複数WARP単一GEMV単一行GEMVカーネル
+  <<<napprox+ndense, 32*mul>>>
+  1 GEMV by mul TB
+  1 line by 1/mul WARP
+  バリエーション
+  - mul：
+  - a2t：a2を転置版で計算するか否か
+  - a2interchange：a2のループを入れ替えるか否か
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+*/
+  if((kernel>=4000)&&(kernel<4192)){
+	int subkernel = kernel-4000;
+	int MUL, ATOMIC;
+	ATOMIC = subkernel/16;
+	MUL = subkernel%16;
+	ATOMIC = 1; MUL = 1; // test
+	char name[32], fname[64];
+	snprintf(name,32,"hybrid4_mul%d_atomic%d_%s", MUL, ATOMIC, typeid(T).name());
+	snprintf(fname,64,"result_cuda1_%s.txt", name);
+	printf("fname = %s\n", fname);
+	printf("MUL = %d, ATOMIC = %d\n", MUL, ATOMIC);
+	// EXEC
+	{
+    hmvm_cuda_hybrid4_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T)*MUL,MUL,ATOMIC, v, b, nd, fname, 0);
+	//(d_sm.napprox+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	//(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	}
+	// BENCH
+	{
+	}
+  }
+#endif
+
   // ######## ######## ######## ######## ######## ######## ######## ########
   cudaFree(d_sm.ltmtx);
   cudaFree(d_sm.ndl);

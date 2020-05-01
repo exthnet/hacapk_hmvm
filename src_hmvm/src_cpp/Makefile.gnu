@@ -1,5 +1,6 @@
 # -*- makefile -*-
 
+# debug
 #OPTS=-D_SKIP_APPROX
 #OPTS=-D_SKIP_DENSE
 
@@ -14,7 +15,7 @@ CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
 #NVCC = /usr/local/cuda/bin/nvcc
 NVCC = nvcc
 # for Volta
-NVCCFLAGS = -O3 -Xcompiler "-O3 -fopenmp" \
+NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 --generate-code arch=compute_70,code=sm_70
 # for Volta (Pascal mode)
 #NVCCFLAGS = -g -lineinfo -O0 -Xcompiler "-O3 -fopenmp" \
@@ -36,7 +37,7 @@ endif
 # Object files
 OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
-CUOBJS = hmvm_cuda.o hmvm_cuda_kernels.o
+CUOBJS = hmvm_cuda.o #hmvm_cuda_kernels.o
 HOBJS = hacapk.h
 
 ######################
