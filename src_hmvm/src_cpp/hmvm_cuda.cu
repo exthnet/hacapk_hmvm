@@ -137,7 +137,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	- a2trans：approxy2を転置版で計算するか否か(0,1)
 	- a2interchange：approxy2のループを入れ替えるか否か(0,1)
   */
-  if(kernel>=0 && kernel<10)
+  if(kernel>=0 && kernel<4)
   {
 	int subkernel = kernel;
 	int a2t, a2i;
@@ -173,9 +173,9 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	- a2trans：approxy2を転置版で計算するか否か(0,1)
 	- a2interchange：approxy2のループを入れ替えるか否か(0,1)
   */
-  if(kernel>=10 && kernel<20)
+  if(kernel>=10 && kernel<14)
   {
-	int subkernel = kernel;
+	int subkernel = kernel-10;
 	int a2t, a2i;
 	a2t = subkernel%2;
 	a2i = (subkernel/2)%2;
@@ -184,7 +184,6 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	snprintf(fname,128,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	//EXEC((hmvm_cuda_seq<T,1,1>),1,1,d_sm.ktmax*sizeof(T));
 	hmvm_cuda_block_proxy
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
@@ -217,38 +216,49 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   6x2x2x2x2=96通り
+  何故かdivが8or16の時にa2i=1,aa=1の結果がおかしい
+  div8は誤差の範囲かも知れない、div16はよりおかしい
 */
   if(kernel>=1000&&kernel<1096){
 	int subkernel = kernel-1000;
-	int DIV, ATOMIC, a2t, a2i, aa, da;
-	DIV = subkernel%6;
-	ATOMIC = (subkernel/6)%2;
-	a2t = ((subkernel/6)/2)%2;
-	a2i = (((subkernel/6)/2)/2)%2;
-	aa = ((((subkernel/6)/2)/2)/2)%2;
-	da = (((((subkernel/6)/2)/2)/2)/2)%2;
-	DIV = pow(2,DIV);
-	char name[64], fname[128];
-	snprintf(name,64,"hybrid1_div%d_atomic%d_a2t%d_a2i%d_aa%d_da%d%s", DIV, ATOMIC, a2t, a2i, aa, da, typeid(T).name());
-	snprintf(fname,128,"result_cuda1_%s.txt", name);
+	int div, a2t, a2i, aa, da;
+	div = subkernel%6;
+	a2t = (subkernel/6)%2;
+	a2i = ((subkernel/6)/2)%2;
+	aa = (((subkernel/6)/2)/2)%2;
+	da = ((((subkernel/6)/2)/2)/2)%2;
+	div = pow(2,div);
+	char name[0xff], fname[0xff];
+	snprintf(name,0xff,"hybrid1_div%d_a2t%d_a2i%d_aa%d_da%d_%s", div, a2t, a2i, aa, da, typeid(T).name());
+	snprintf(fname,0xff,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
+	hmvm_cuda_hybrid1_proxy<T>
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
+	   v, b, nd, fname, 0,
+	   div, a2t, a2i, aa, da);
+	/*
 	hmvm_cuda_hybrid1_proxy
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 	   d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T),
 	   v, b, nd, fname, 0,
-	   DIV,a2t,a2i,aa,da);
+	   div, a2t, a2i, aa, da);
 	// BENCH
-	/*
-	hmvm_cuda_hybrid1_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-							   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-							   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-							   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-							   d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T), v, b, nd, fname, 5,
-							   DIV, ATOMIC, a2t, a2i, aa, da);
+	if(0)hmvm_cuda_hybrid1_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   d_sm.napprox+d_sm.ndense,32,d_sm.ktmax*sizeof(T),
+	   v, b, nd, fname, 5,
+	   div, a2t, a2i, aa, da);
 	*/
   }
 
@@ -261,40 +271,50 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   1 line by 1/div WARP
   バリエーション
   - div：1行を1/divのWARPで計算する、div=1,2,4,8,16,32
-  - mul：立ち上げるスレッド数(mul*32)、1つのmat-mat-vecまたはmat-vecをmul TBで実行、mul=1,2,3,...,
-  - a2t：a2を転置版で計算するか否か
-  - a2interchange：a2のループを入れ替えるか否か
-  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
-  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
+  - mul：立ち上げるスレッド数(mul*32)、1つのmat-mat-vecまたはmat-vecをmul TBで実行、mul=1,2,3,...,16
+  - a2t：a2を転置版で計算するか否か(0,1)
+  - a2interchange：a2のループを入れ替えるか否か(0,1)
+  - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか(0,1)
+  - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか(0,1)
+  6x16x2x2x2x2=1536通り
+  全部大丈夫そう
 */
-  if(kernel>=2000&&kernel<2192){
-	int subkernel = kernel-2000;
-	int DIV, MUL, ATOMIC;
-	ATOMIC = subkernel/96;
-	MUL = (subkernel%96)/6 + 1;
-	DIV = pow(2,subkernel%6);
-	if((32*MUL)%DIV)printf("invalid parameters: 32*%d %% %d\n", MUL, DIV);
-	char name[32], fname[64];
-	snprintf(name,32,"hybrid2_div%d_mul%d_atomic%d_%s", DIV, MUL, ATOMIC, typeid(T).name());
-	snprintf(fname,64,"result_cuda1_%s.txt", name);
+  if(kernel>=10000&&kernel<11536){
+	int subkernel = kernel-10000;
+	int div, mul, a2t, a2i, aa, da;
+	div = subkernel%6;
+	mul = (subkernel/6)%16 + 1;
+	a2t = ((subkernel/6)/16)%2;
+	a2i = (((subkernel/6)/16)/2)%2;
+	aa = ((((subkernel/6)/16)/2)/2)%2;
+	da = (((((subkernel/6)/16)/2)/2)/2)%2;
+	div = pow(2,div);
+	if((32*mul)%div)printf("invalid parameters: 32*%d %% %d\n", mul, div);
+	char name[0xff], fname[0xff];
+	snprintf(name,0xff,"hybrid2_div%d_mul%d_a2t%d_a2i%d_aa%d_da%d_%s", div, mul, a2t, a2i, aa, da, typeid(T).name());
+	snprintf(fname,0xff,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
-	printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
+	//printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
 	// EXEC
-	{
-	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
-	}
+	hmvm_cuda_hybrid2_proxy<T>
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   d_sm.napprox+d_sm.ndense, 32*mul, d_sm.ktmax*sizeof(T),
+	   v, b, nd, fname, 0,
+	   div, mul, a2t, a2i, aa, da);
 	// BENCH
-	{
-	  hmvm_cuda_hybrid2_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-								 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-								 d_sm.napprox+d_sm.ndense,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
-	}
+	/*
+	if(0)hmvm_cuda_hybrid2_proxy
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   d_sm.napprox+d_sm.ndense,32*mul,d_sm.ktmax*sizeof(T),
+	   v, b, nd, fname, 5,
+	   div, mul, a2t, a2i, aa, da);
+	*/
   }
 #endif
 
@@ -316,29 +336,36 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
 */
-  if((kernel>=3000)&&(kernel<3192)){
-	int subkernel = kernel-3000;
-	int DIV, MUL, ATOMIC;
-	ATOMIC = subkernel/96;
-	MUL = (subkernel%96)/6 + 1;
-	DIV = pow(2,subkernel%6);
-	//ATOMIC = 1; MUL = 1; DIV = 1; // test
-	char name[32], fname[64];
-	snprintf(name,32,"hybrid3_div%d_mul%d_atomic%d_%s", DIV, MUL, ATOMIC, typeid(T).name());
-	snprintf(fname,64,"result_cuda1_%s.txt", name);
+  if((kernel>=20000)&&(kernel<21536)){
+	int subkernel = kernel-20000;
+	int div, mul, a2t, a2i, aa, da;
+	div = subkernel%6;
+	mul = (subkernel/6)%16 + 1;
+	a2t = ((subkernel/6)/16)%2;
+	a2i = (((subkernel/6)/16)/2)%2;
+	aa = ((((subkernel/6)/16)/2)/2)%2;
+	da = (((((subkernel/6)/16)/2)/2)/2)%2;
+	div = pow(2,div);
+	char name[0xff], fname[0xff];
+	snprintf(name,0xff,"hybrid3_div%d_mul%d_a2t%d_a2i%d_aa%d_da%d_%s", div, mul, a2t, a2i, aa, da, typeid(T).name());
+	snprintf(fname,0xff,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
-	printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
+	//printf("DIV = %d, MUL = %d, ATOMIC = %d\n", DIV, MUL, ATOMIC);
 	// EXEC
-	{
-    hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	(d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
-	//(d_sm.napprox+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
-	//(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
-	}
+#if 1
+	hmvm_cuda_hybrid3_proxy<T>
+	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
+	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+	   (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
+	   v, b, nd, fname, 0,
+	   div, mul, a2t, a2i, aa, da);
+	  //(d_sm.napprox+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T)*MUL,DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+	  //(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 0);
+#endif
 	// BENCH
+	/*
 	if(0){
 	  hmvm_cuda_hybrid3_proxy<T>(d_v, d_b, d_sm.nlf, d_sm.ktmax,
 								 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
@@ -346,6 +373,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 								 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 								 (d_sm.napprox+MUL-1)/MUL+(d_sm.ndense+MUL-1)/MUL,32*MUL,d_sm.ktmax*sizeof(T),DIV,MUL,ATOMIC, v, b, nd, fname, 1);
 	}
+	*/
   }
 #endif
 
