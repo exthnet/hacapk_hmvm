@@ -18,10 +18,10 @@ NVCC = nvcc
 NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 --generate-code arch=compute_70,code=sm_70
 # for Volta (Pascal mode)
-#NVCCFLAGS = -g -lineinfo -O0 -Xcompiler "-O3 -fopenmp" \
+#NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_60,code=sm_70
 # for many GPUs
-#NVCCFLAGS = -O -Xcompiler "-O3 -fopenmp" \
+#NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_53,code=sm_53 \
 #--generate-code arch=compute_60,code=sm_60 \
 #--generate-code arch=compute_70,code=sm_70
@@ -37,8 +37,8 @@ endif
 # Object files
 OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
-CUOBJS = hmvm_cuda.o #hmvm_cuda_kernels.o
-HOBJS = hacapk.h
+CUOBJS = hmvm_cuda0.o hmvm_cuda1.o hmvm_cuda2.o hmvm_cuda3.o
+HOBJS  = hacapk.h
 
 ######################
 # Compile cmmands
