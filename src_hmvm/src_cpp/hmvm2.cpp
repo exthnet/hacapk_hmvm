@@ -113,18 +113,18 @@ int main(int argc, char **argv)
   // CUDA
 #ifdef _USE_CUDA
   // sequential
-  for(i=0;i<4;i++)hmvm_cuda0<float>(matD2, b, i, dump_result);
+  for(i=0;i<4;i++)hmvm_cuda0<float>(matF2, fb, i, dump_result);
   // block
-  for(i=0;i<4;i++)hmvm_cuda0<float>(matD2, b, 10+i, dump_result);
+  for(i=0;i<4;i++)hmvm_cuda0<float>(matF2, fb, 10+i, dump_result);
   // hybrid1: DIV(1,2,4,8,16,32), ATOMIC(1,2), = 96patterns
-  for(i=0;i<96;i++)hmvm_cuda1<float>(matD2, b, 1000+i, dump_result);
+  for(i=0;i<96;i++)hmvm_cuda1<float>(matF2, fb, 1000+i, dump_result);
   // hybrid2: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
-  for(i=0;i<1536;i++)hmvm_cuda2<float>(matD2, b, 10000+i, dump_result);
+  for(i=0;i<1536;i++)hmvm_cuda2<float>(matF2, fb, 10000+i, dump_result);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
-  for(i=0;i<1536;i++)hmvm_cuda3<float>(matD2, b, 20000+i, dump_result);
+  for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, 20000+i, dump_result);
 #endif
   delete [] fb;//free(fb);
-
+#endif
   delete [] matF2;
   delete [] matD2;
   return 0;
