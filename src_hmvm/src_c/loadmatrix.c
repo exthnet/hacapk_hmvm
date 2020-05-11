@@ -7,7 +7,7 @@
 
 int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 {
-  int i;
+  int i, ret;
   FILE *F;
   int irecord;
   int nd, nlf, ktmax, len, offset;
@@ -17,11 +17,11 @@ int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 	printf("fopen %s failed\n", fname);
 	return -1;
   }
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&nd, sizeof(int), 1, F);
-  fread(&nlf, sizeof(int), 1, F);
-  fread(&ktmax, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&nd, sizeof(int), 1, F);
+  ret = fread(&nlf, sizeof(int), 1, F);
+  ret = fread(&ktmax, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
   printf("nd =  %d\n", nd);
   printf("nlf = %d\n", nlf);
   printf("ktmax = %d\n", ktmax);
@@ -40,14 +40,14 @@ int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
   printf("loadHmatrix: load rowdata\n"); fflush(stdout);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
-	fread(&irecord, sizeof(int), 1, F);
-	fread(&ltmtx, sizeof(int), 1, F);
-	fread(&ndl, sizeof(int), 1, F);
-	fread(&ndt, sizeof(int), 1, F);
-	fread(&nstrtl, sizeof(int), 1, F);
-	fread(&nstrtt, sizeof(int), 1, F);
-	fread(&kt, sizeof(int), 1, F);
-	fread(&irecord, sizeof(int), 1, F);
+	ret = fread(&irecord, sizeof(int), 1, F);
+	ret = fread(&ltmtx, sizeof(int), 1, F);
+	ret = fread(&ndl, sizeof(int), 1, F);
+	ret = fread(&ndt, sizeof(int), 1, F);
+	ret = fread(&nstrtl, sizeof(int), 1, F);
+	ret = fread(&nstrtt, sizeof(int), 1, F);
+	ret = fread(&kt, sizeof(int), 1, F);
+	ret = fread(&irecord, sizeof(int), 1, F);
 	//printf("%d: %d %d %d %d %d %d\n", i,ltmtx, ndl, ndt, nstrtl, nstrtt, kt);
 
 	mat->submat[i].ltmtx = ltmtx;
@@ -61,12 +61,12 @@ int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 	  mat->submat[i].a1 = (double*)malloc(sizeof(double)*kt*ndt);
 	  mat->submat[i].a2 = (double*)malloc(sizeof(double)*kt*ndl);
 	  mat->submat[i].a2t = (double*)malloc(sizeof(double)*kt*ndl);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a1, sizeof(double), kt*ndt, F);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a2, sizeof(double), kt*ndl, F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a1, sizeof(double), kt*ndt, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a2, sizeof(double), kt*ndl, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  len += kt*ndt + kt*ndl;
 	  int x, y;
 	  for(y=0;y<kt;y++){
@@ -78,9 +78,9 @@ int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 	  mat->submat[i].a1 = (double*)malloc(sizeof(double)*ndl*ndt);
 	  mat->submat[i].a2 = NULL;
 	  mat->submat[i].a2t = NULL;
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(mat->submat[i].a1, sizeof(double), ndl*ndt, F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(mat->submat[i].a1, sizeof(double), ndl*ndt, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  len += ndl*ndt;
 	}
   }
@@ -133,7 +133,7 @@ int loadHmatrix(const char *fname, matrix *mat, matrix2 *mat2)
 
 int loadHmatrix2(const char *fname, matrix2 *mat2)
 {
-  int i;
+  int i, ret;
   FILE *F;
   int irecord;
   int nd, nlf, ktmax, len, offset;
@@ -143,12 +143,12 @@ int loadHmatrix2(const char *fname, matrix2 *mat2)
 	printf("fopen %s failed\n", fname);
 	return -1;
   }
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&nd, sizeof(int), 1, F);
-  fread(&nlf, sizeof(int), 1, F);
-  fread(&ktmax, sizeof(int), 1, F);
-  fread(&len, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&nd, sizeof(int), 1, F);
+  ret = fread(&nlf, sizeof(int), 1, F);
+  ret = fread(&ktmax, sizeof(int), 1, F);
+  ret = fread(&len, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
   printf("nd =  %d\n", nd);
   printf("nlf = %d\n", nlf);
   printf("ktmax = %d\n", ktmax);
@@ -169,24 +169,24 @@ int loadHmatrix2(const char *fname, matrix2 *mat2)
   mat2->a1 = (int*)malloc(sizeof(int)*nlf);
   mat2->a2 = (int*)malloc(sizeof(int)*nlf);
 
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->ltmtx, sizeof(int), nlf, F); printf("ltmtx %d\n", mat2->ltmtx[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->ndl, sizeof(int), nlf, F); printf("ndl %d\n", mat2->ndl[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->ndt, sizeof(int), nlf, F); printf("ndt %d\n", mat2->ndt[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->nstrtl, sizeof(int), nlf, F); printf("nstrtl %d\n", mat2->nstrtl[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->nstrtt, sizeof(int), nlf, F); printf("nstrtt %d\n", mat2->nstrtt[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(&irecord, sizeof(int), 1, F);
-  fread(mat2->kt, sizeof(int), nlf, F); printf("kt %d\n", mat2->kt[0]); fflush(stdout);
-  fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->ltmtx, sizeof(int), nlf, F); printf("ltmtx %d\n", mat2->ltmtx[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->ndl, sizeof(int), nlf, F); printf("ndl %d\n", mat2->ndl[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->ndt, sizeof(int), nlf, F); printf("ndt %d\n", mat2->ndt[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->nstrtl, sizeof(int), nlf, F); printf("nstrtl %d\n", mat2->nstrtl[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->nstrtt, sizeof(int), nlf, F); printf("nstrtt %d\n", mat2->nstrtt[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(&irecord, sizeof(int), 1, F);
+  ret = fread(mat2->kt, sizeof(int), nlf, F); printf("kt %d\n", mat2->kt[0]); fflush(stdout);
+  ret = fread(&irecord, sizeof(int), 1, F);
 
   mat2->rowmat = (double*)malloc(sizeof(double)*len);
   mat2->rowmat_t = (double*)malloc(sizeof(double)*len);
@@ -196,15 +196,15 @@ int loadHmatrix2(const char *fname, matrix2 *mat2)
 	int ltmtx = mat2->ltmtx[i];
 	if(ltmtx==1){
 	  mat2->a1[i] = offset;
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndt[i], F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndt[i], F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->kt[i]*mat2->ndt[i]);
 	  offset += mat2->kt[i]*mat2->ndt[i];
 	  mat2->a2[i] = offset;
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndl[i], F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&mat2->rowmat[offset], sizeof(double), mat2->kt[i]*mat2->ndl[i], F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  //memcpy(&mat2->rowmat_t[offset], mat->submat[i].a2t, sizeof(double)*mat->submat[i].kt*mat->submat[i].ndl);
 	  int x, y;
 	  int kt = mat2->kt[i];
@@ -217,9 +217,9 @@ int loadHmatrix2(const char *fname, matrix2 *mat2)
 	  offset += mat2->kt[i]*mat2->ndl[i];
 	}else{
 	  mat2->a1[i] = offset;
-	  fread(&irecord, sizeof(int), 1, F);
-	  fread(&mat2->rowmat[offset], sizeof(double), mat2->ndl[i]*mat2->ndt[i], F);
-	  fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
+	  ret = fread(&mat2->rowmat[offset], sizeof(double), mat2->ndl[i]*mat2->ndt[i], F);
+	  ret = fread(&irecord, sizeof(int), 1, F);
 	  memcpy(&mat2->rowmat_t[offset], &mat2->rowmat[offset], sizeof(double)*mat2->ndl[i]*mat2->ndt[i]);
 	  offset += mat2->ndl[i]*mat2->ndt[i];
 	  mat2->a2[i] = 0;

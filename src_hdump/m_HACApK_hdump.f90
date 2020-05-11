@@ -2,18 +2,21 @@ module m_HACApK_hdump
   use m_HACApK_use
   use m_HACApK_base
   use m_HACApK_calc_entry_ij
-!  use omp_lib
+  !  use omp_lib
   implicit integer*4(i-n)
 
 contains
 
+  ! ######## ######## ######## ######## ######## ######## ######## ########
+  ! HACApK_info_leafmtx
   ! show hmatrix information
+  ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_info_leafmtx(st_leafmtxp,st_ctl,mpinr)
     implicit none
-    type(st_HACApK_leafmtxp) :: st_leafmtxp
-    type(st_HACApK_lcontrol) :: st_ctl
+    type(st_HACApK_leafmtxp),intent(in) :: st_leafmtxp
+    type(st_HACApK_lcontrol),intent(in) :: st_ctl
     integer :: mpinr
-    integer*4 :: nd,nlf,ktmax,ip,ltmtx,kt,ndl,ndt,nstrtl,nstrtt,ierr
+    integer*4 :: nd, nlf, ktmax, ip, ltmtx, kt, ndl, ndt, nstrtl, nstrtt, ierr
     character*32 :: fname
 
     integer :: min_kt, min_ndl, min_ndt
@@ -69,12 +72,13 @@ contains
   end subroutine HACApK_info_leafmtx
 
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  ! write hmatrix to file
+  ! HACApK_hdump_leafmtx
+  ! write hmatrix to file (hmatrix_1.bin)
   ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
     implicit none
-    type(st_HACApK_leafmtxp) :: st_leafmtxp
-    type(st_HACApK_lcontrol) :: st_ctl
+    type(st_HACApK_leafmtxp),intent(in) :: st_leafmtxp
+    type(st_HACApK_lcontrol),intent(in) :: st_ctl
     integer :: mpinr
     integer*4 :: nd,nlf,ktmax,ip,ltmtx,kt,ndl,ndt,nstrtl,nstrtt,ierr
     character*32 :: fname
@@ -85,10 +89,6 @@ contains
     write(*,*)"file dump to ",fname
     nd=st_leafmtxp%nd; nlf=st_leafmtxp%nlf; ktmax=st_leafmtxp%ktmax
     open( 11, file=fname, action='write', iostat=ierr, form="unformatted" )
-
-    ! for debug, dump only first 2 leavs
-    !    write(11) nd,1,ktmax
-    !    do ip=1,2
 
     write(11) nd,nlf,ktmax
     do ip=1,nlf
@@ -108,12 +108,13 @@ contains
   end subroutine HACApK_hdump_dump_leafmtx
 
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  ! write hmatrix to file
+  ! HACApK_hdump_leafmtx2
+  ! write hmatrix to file (hmatrix_2.bin)
   ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump_dump_leafmtx2(st_leafmtxp,st_ctl,mpinr)
     implicit none
-    type(st_HACApK_leafmtxp) :: st_leafmtxp
-    type(st_HACApK_lcontrol) :: st_ctl
+    type(st_HACApK_leafmtxp),intent(in) :: st_leafmtxp
+    type(st_HACApK_lcontrol),intent(in) :: st_ctl
     integer :: mpinr
     integer*4 :: nd,nlf,ktmax,ip,ltmtx,kt,ndl,ndt,nstrtl,nstrtt,ierr, len
     character*32 :: fname
@@ -126,9 +127,6 @@ contains
     nd=st_leafmtxp%nd; nlf=st_leafmtxp%nlf; ktmax=st_leafmtxp%ktmax
     open( 11, file=fname, action='write', iostat=ierr, form="unformatted" )
 
-    ! for debug, dump only first 2 leavs
-    !    write(11) nd,1,ktmax
-    !    do ip=1,2
     allocate(buf(nlf))
 
     len = 0
@@ -182,25 +180,27 @@ contains
   end subroutine HACApK_hdump_dump_leafmtx2
 
   ! ######## ######## ######## ######## ######## ######## ######## ########
+  ! HACApK_hdump_solve
   ! modified solve function
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  subroutine HACApK_hdump_solve(st_leafmtxp,st_bemv,st_ctl,rhs,sol,ztol)
+  subroutine HACApK_hdump_solve(st_leafmtxp, st_bemv, st_ctl, rhs, sol, ztol)
     implicit none
     include 'mpif.h'
     type(st_HACApK_leafmtxp) :: st_leafmtxp
-    type(st_HACApK_lcontrol) :: st_ctl
-    type(st_HACApK_calc_entry) :: st_bemv
-    real*8 :: rhs(st_bemv%nd),sol(st_bemv%nd),ztol
+    type(st_HACApK_lcontrol), intent(in) :: st_ctl
+    type(st_HACApK_calc_entry), intent(in) :: st_bemv
+    real*8, intent(in) :: rhs(st_bemv%nd), sol(st_bemv%nd), ztol
     real*8,pointer :: param(:)
     real*8,dimension(:),allocatable :: u,b,www,ao
-    integer*4,pointer :: lpmd(:),lnp(:),lsp(:),lthr(:),lod(:)
+    integer*4,pointer :: lpmd(:), lnp(:), lsp(:), lthr(:), lod(:)
     integer :: icomm, ierr
     integer :: il, mpinr, nthr, nofc, nffc, nd
     real*8 :: zzz
 1000 format(5(a,i10)/)
 2000 format(5(a,1pe15.8)/)
 
-    lpmd => st_ctl%lpmd(:); lnp(0:) => st_ctl%lnp; lsp(0:) => st_ctl%lsp;lthr(0:) => st_ctl%lthr;lod => st_ctl%lod(:); param=>st_ctl%param(:)
+    lpmd => st_ctl%lpmd(:); lnp(0:) => st_ctl%lnp; lsp(0:) => st_ctl%lsp; lthr(0:) => st_ctl%lthr
+    lod => st_ctl%lod(:); param=>st_ctl%param(:)
     mpinr=lpmd(3); icomm=lpmd(1); nthr=lpmd(20)
     param(91)=ztol
     if(st_ctl%param(1)>0 .and. mpinr==0) print*,'HACApK_hdump_solve start'
@@ -210,7 +210,6 @@ contains
     if(st_ctl%param(1)>1) write(*,*) 'irank=',mpinr,' lthr=',lthr(0:nthr-1)
     allocate(u(nd),b(nd)); u(:nd)=sol(lod(:nd)); b(:nd)=rhs(lod(:nd))
     if(param(61)==3)then
-       !   do il=ndnr_s,ndnr_e
        do il=1,nd
           u(il)=u(il)/st_bemv%ao(lod(il))
           b(il)=b(il)*st_bemv%ao(lod(il))
@@ -223,11 +222,10 @@ contains
           ao(il)=1.0d0/zzz
        enddo
        call MPI_Barrier( icomm, ierr )
-       ! dump hmatrix
        ! dump info
        print*,'HACApK_info_leafmtx'
        call HACApK_info_leafmtx(st_leafmtxp,st_ctl,mpinr)
-       ! dump matrix
+       ! dump matrix to files
        print*,'HACApK_dump_leafmtx'
        st_leafmtxp%nd = nd
        call HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
@@ -236,21 +234,20 @@ contains
   end subroutine HACApK_hdump_solve
 
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  ! hdump (modified gensolv function)
+  ! HACApK_hdump (modified gensolv function)
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  subroutine HACApK_hdump(st_leafmtxp,st_bemv,st_ctl,gmid,rhs,sol,ztol)
+  subroutine HACApK_hdump(st_leafmtxp, st_bemv, st_ctl, gmid, rhs, sol, ztol)
     implicit none
     include 'mpif.h'
-    type(st_HACApK_leafmtxp) :: st_leafmtxp
-    type(st_HACApK_lcontrol) :: st_ctl
-    type(st_HACApK_calc_entry) :: st_bemv
-    real*8 :: gmid(st_bemv%nd,3),rhs(st_bemv%nd),sol(st_bemv%nd),ztol
-    real*8 :: ww(st_bemv%nd),aww(st_bemv%nd),aww1(st_bemv%nd)
+    type(st_HACApK_leafmtxp), intent(in) :: st_leafmtxp
+    type(st_HACApK_lcontrol), intent(in) :: st_ctl
+    type(st_HACApK_calc_entry), intent(in) :: st_bemv
+    real*8, intent(in) :: gmid(st_bemv%nd,3), rhs(st_bemv%nd), sol(st_bemv%nd), ztol
     integer :: icomm, ierr, ret
 1000 format(5(a,i10)/)
 2000 format(5(a,1pe15.8)/)
 
-    icomm=st_ctl%lpmd(1)
+    icomm = st_ctl%lpmd(1)
     ret = HACApK_generate(st_leafmtxp,st_bemv,st_ctl,gmid,ztol)
     call MPI_Barrier( icomm, ierr )
     ! dump H matrix

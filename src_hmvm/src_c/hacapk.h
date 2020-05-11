@@ -25,9 +25,6 @@ typedef struct matrix2{
   int *ltmtx, *kt, *ndl, *ndt, *nstrtl, *nstrtt;
   int *a1, *a2; // head
   double *rowmat, *rowmat_t; // data
-  // 近似行列と密行列を分離してみる（確認用）
-  int napprox, ndense;
-  int *approx, *dense;
 }matrix2;
 
 // setup matrix
@@ -36,11 +33,11 @@ int loadHmatrix2(const char *fname, matrix2*);
 int dummymatrix(matrix *mat, matrix2 *mat2, int ndl, int ndt, int n);
 
 // seq
-void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result);
-void hmvm_seq_bench(matrix *mat, matrix2 *mat2, double *b);
+void hmvm_seq(const matrix *mat, const matrix2 *mat2, const double *b, int dump_result);
+void hmvm_seq_bench(const matrix *mat, const matrix2 *mat2, const double *b);
 // omp
-void hmvm_omp(matrix *mat, matrix2 *mat2, double *b, int dump_result);
-void hmvm_omp_bench(matrix *mat, matrix2 *mat2, double *b);
+void hmvm_omp(const matrix *mat, const matrix2 *mat2, const double *b, int dump_result);
+void hmvm_omp_bench(const matrix *mat, const matrix2 *mat2, const double *b);
 
 // mkl
 #ifdef __INTEL_COMPILER

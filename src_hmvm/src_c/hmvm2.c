@@ -9,7 +9,6 @@ int main(int argc, char **argv)
 {
   int i, ret;
   FILE *F;
-  matrix *mat=NULL;
   matrix2 *mat2=NULL;
   int dump_result = 0;
 
@@ -40,36 +39,22 @@ int main(int argc, char **argv)
   // ######## ######## ######## ######## ######## ######## ######## ########
   // ready for hmvm
   // ######## ######## ######## ######## ######## ######## ######## ########
-#if 0
-  int ip;
-  mat2.approx = (int*)malloc(sizeof(int)*mat2.nlf);
-  mat2.dense  = (int*)malloc(sizeof(int)*mat2.nlf);
-  mat2.napprox = mat2.ndense = 0;
-  for(ip=0; ip<mat2.nlf; ip++){
-	if(mat2.ltmtx[ip]==1){
-	  mat2.approx[mat2.napprox++] = ip;
-	}else{
-	  mat2.dense[mat2.ndense++] = ip;
-	}
-  }
-  printf(" %d approx, %d dense\n", mat2.napprox, mat2.ndense);
-#endif
   // sequential
-  hmvm_seq(mat, mat2, b, dump_result);
-  hmvm_seq_bench(mat, mat2, b);
+  hmvm_seq(NULL, mat2, b, dump_result);
+  hmvm_seq_bench(NULL, mat2, b);
   // OpenMP
-  hmvm_omp(mat, mat2, b, dump_result);
-  hmvm_omp_bench(mat, mat2, b);
+  hmvm_omp(NULL, mat2, b, dump_result);
+  hmvm_omp_bench(NULL, mat2, b);
   // MKL
 #ifdef __INTEL_COMPILER
-  hmvm_blas_p(*mat, *mat2, b, dump_result);
-  hmvm_blas_p_bench(*mat, *mat2, b);
-  hmvm_blas_s(*mat, *mat2, b, dump_result);
-  hmvm_blas_s_bench(*mat, *mat2, b);
-  hmvm_cblas_p(*mat, *mat2, b, dump_result);
-  hmvm_cblas_p_bench(*mat, *mat2, b);
-  hmvm_cblas_s(*mat, *mat2, b, dump_result);
-  hmvm_cblas_s_bench(*mat, *mat2, b);
+  hmvm_blas_p(NULL, mat2, b, dump_result);
+  hmvm_blas_p_bench(NULL, mat2, b);
+  hmvm_blas_s(NULL, mat2, b, dump_result);
+  hmvm_blas_s_bench(NULL, mat2, b);
+  hmvm_cblas_p(NULL, mat2, b, dump_result);
+  hmvm_cblas_p_bench(NULL, mat2, b);
+  hmvm_cblas_s(NULL, mat2, b, dump_result);
+  hmvm_cblas_s_bench(NULL, mat2, b);
 #endif
   return 0;
 }

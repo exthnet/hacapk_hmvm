@@ -6,7 +6,7 @@
 #include "hacapk.h"
 
 // ######## ######## ######## ########
-void hmvm_seq_1(double *v, matrix *mat, double *b)
+void hmvm_seq_1(double *v, const matrix *mat, const double *b)
 {
   int i, j;
   double *tmp;
@@ -58,7 +58,7 @@ void hmvm_seq_1(double *v, matrix *mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_1t(double *v, matrix *mat, double *b)
+void hmvm_seq_1t(double *v, const matrix *mat, const double *b)
 {
   int i, j;
   double *tmp;
@@ -86,8 +86,8 @@ void hmvm_seq_1t(double *v, matrix *mat, double *b)
 		}
 	  }
 	  for(il=0;il<ndl;il++){
+		ill=il+nstrtl-1;
 		for(it=0;it<kt;it++){
-		  ill=il+nstrtl-1;
 		  itl=it+il*kt;
 		  v[ill] += mat->submat[i].a2t[itl] * tmp[it];
 		}
@@ -110,7 +110,7 @@ void hmvm_seq_1t(double *v, matrix *mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_2(double *v, matrix2 *mat, double *b)
+void hmvm_seq_2(double *v, const matrix2 *mat, const double *b)
 {
   int i, j;
   double *tmp;
@@ -166,7 +166,7 @@ void hmvm_seq_2(double *v, matrix2 *mat, double *b)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_2t(double *v, matrix2 *mat, double *b)
+void hmvm_seq_2t(double *v, const matrix2 *mat, const double *b)
 {
   int i, j;
   double *tmp;
@@ -197,8 +197,8 @@ void hmvm_seq_2t(double *v, matrix2 *mat, double *b)
 	  }
 	  head = mat->a2[i];
 	  for(il=0;il<ndl;il++){
+		ill=il+nstrtl-1;
 		for(it=0;it<kt;it++){
-		  ill=il+nstrtl-1;
 		  itl=it+il*kt;
 		  v[ill] += mat->rowmat_t[head+itl] * tmp[it];
 		}
@@ -223,7 +223,7 @@ void hmvm_seq_2t(double *v, matrix2 *mat, double *b)
 
 
 // ######## ######## ######## ########
-void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
+void hmvm_seq(const matrix *mat, const matrix2 *mat2, const double *b, const int dump_result)
 {
   int i, nd;
   FILE *F;
@@ -286,7 +286,7 @@ void hmvm_seq(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 }
 
 // ######## ######## ######## ########
-void hmvm_seq_bench(matrix *mat, matrix2 *mat2, double *b)
+void hmvm_seq_bench(const matrix *mat, const matrix2 *mat2, const double *b)
 {
   const int L=10;
   int i, l, nd;

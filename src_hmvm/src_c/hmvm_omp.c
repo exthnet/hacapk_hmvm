@@ -6,8 +6,8 @@
 #include "hacapk.h"
 
 // ######## ######## ######## ########
-void  hmvm_omp_1
-(double *zau, matrix *mat, double *zu)
+void hmvm_omp_1
+(double *zau, const matrix *mat, const double *zu)
 {
 #pragma omp parallel
   {
@@ -75,8 +75,8 @@ void  hmvm_omp_1
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_1t
-(double *zau, matrix *mat, double *zu)
+void hmvm_omp_1t
+(double *zau, const matrix *mat, const double *zu)
 {
 #pragma omp parallel
   {
@@ -144,8 +144,8 @@ void  hmvm_omp_1t
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_2
-(double *zau, matrix2 *mat, double *zu)
+void hmvm_omp_2
+(double *zau, const matrix2 *mat, const double *zu)
 {
 #pragma omp parallel
   {
@@ -217,8 +217,8 @@ void  hmvm_omp_2
 }
 
 // ######## ######## ######## ########
-void  hmvm_omp_2t
-(double *zau, matrix2 *mat, double *zu)
+void hmvm_omp_2t
+(double *zau, const matrix2 *mat, const double *zu)
 {
 #pragma omp parallel
   {
@@ -291,7 +291,7 @@ void  hmvm_omp_2t
 
 
 // ######## ######## ######## ########
-void hmvm_omp(matrix *mat, matrix2 *mat2, double *b, int dump_result)
+void hmvm_omp(const matrix *mat, const matrix2 *mat2, const double *b, int dump_result)
 {
   int i, nd;
   FILE *F;
@@ -354,7 +354,7 @@ void hmvm_omp(matrix *mat, matrix2 *mat2, double *b, int dump_result)
 }
 
 // ######## ######## ######## ########
-void hmvm_omp_bench(matrix *mat, matrix2 *mat2, double *b)
+void hmvm_omp_bench(const matrix *mat, const matrix2 *mat2, const double *b)
 {
   const int L=10;
   int i, l, nd;
