@@ -7,16 +7,17 @@
 #include "hacapk.h"
 
 // ######## ######## ######## ########
-template<class T>
-void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
+template<class T, int a2i>
+void hmvm_seq_1(T *v, const matrix<T> *mat, const T *b)
 {
   int i, j;
-  T *tmp;
+  T tmp1;
+  T *tmp2;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1: begin\n");
   printf("hmvm_seq1: nlf=%d\n", mat->nlf);
 #endif
-  tmp = (T*)malloc(sizeof(T)*mat->ktmax);
+  tmp2 = (T*)malloc(sizeof(T)*mat->ktmax);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -28,19 +29,31 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
 #ifndef _SKIP_APPROX
-	  for(j=0;j<kt;j++)tmp[j]=0.0;
+	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp[il] += mat->submat[i].a1[itl] * b[itt];
+		  tmp2[il] += mat->submat[i].a1[itl] * b[itt];
 		}
 	  }
-	  for(il=0;il<kt;il++){
+	  if(a2i==0){
+		for(il=0;il<kt;il++){
+		  for(it=0;it<ndl;it++){
+			ill = it+nstrtl-1;
+			itl=it+il*ndl;
+			v[ill] += mat->submat[i].a2[itl] * tmp2[il];
+		  }
+		}
+	  }else{
 		for(it=0;it<ndl;it++){
 		  ill = it+nstrtl-1;
-		  itl=it+il*ndl;
-		  v[ill] += mat->submat[i].a2[itl] * tmp[il];
+		  tmp1 = (T)0.0;
+		  for(il=0;il<kt;il++){
+			itl=it+il*ndl;
+			tmp1 += mat->submat[i].a2[itl] * tmp2[il];
+		  }
+		  v[ill] += tmp1;
 		}
 	  }
 #endif
@@ -48,32 +61,35 @@ void hmvm_seq_1(T *v, matrix<T> *mat, T *b)
 #ifndef _SKIP_DENSE
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
+		tmp1 = 0.0;
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  v[ill] += mat->submat[i].a1[itl] * b[itt];
+		  tmp1 += mat->submat[i].a1[itl] * b[itt];
 		}
+		v[ill] += tmp1;
 	  }
 #endif
 	}
   }
-  free(tmp);
+  free(tmp2);
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1: end\n");
 #endif
 }
 
 // ######## ######## ######## ########
-template<class T>
-void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
+template<class T, int a2i>
+void hmvm_seq_1t(T *v, const matrix<T> *mat, const T *b)
 {
   int i, j;
-  T *tmp;
+  T tmp1;
+  T *tmp2;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1_t: begin\n");
   printf("hmvm_seq1_t: nlf=%d\n", mat->nlf);
 #endif
-  tmp = (T*)malloc(sizeof(T)*mat->ktmax);
+  tmp2 = (T*)malloc(sizeof(T)*mat->ktmax);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -85,19 +101,31 @@ void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
 	kt     = mat->submat[i].kt;
 	if(ltmtx==1){
 #ifndef _SKIP_APPROX
-	  for(j=0;j<kt;j++)tmp[j]=0.0;
+	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp[il] += mat->submat[i].a1[itl] * b[itt];
+		  tmp2[il] += mat->submat[i].a1[itl] * b[itt];
 		}
 	  }
-	  for(il=0;il<ndl;il++){
+	  if(a2i==0){
 		for(it=0;it<kt;it++){
+		  for(il=0;il<ndl;il++){
+			ill=il+nstrtl-1;
+			itl=it+il*kt;
+			v[ill] += mat->submat[i].a2t[itl] * tmp2[it];
+		  }
+		}
+	  }else{
+		for(il=0;il<ndl;il++){
 		  ill=il+nstrtl-1;
-		  itl=it+il*kt;
-		  v[ill] += mat->submat[i].a2t[itl] * tmp[it];
+		  tmp1 = (T)0.0;
+		  for(it=0;it<kt;it++){
+			itl=it+il*kt;
+			tmp1 += mat->submat[i].a2t[itl] * tmp2[it];
+		  }
+		  v[ill] += tmp1;
 		}
 	  }
 #endif
@@ -105,27 +133,29 @@ void hmvm_seq_1t(T *v, matrix<T> *mat, T *b)
 #ifndef _SKIP_DENSE
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
+		tmp1 = (T)0.0;
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  v[ill] += mat->submat[i].a1[itl] * b[itt];
+		  tmp1 += mat->submat[i].a1[itl] * b[itt];
 		}
+		v[ill] += tmp1;
 	  }
 #endif
 	}
   }
-  free(tmp);
+  free(tmp2);
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq1_t: end\n");
 #endif
 }
 
 // ######## ######## ######## ########
-template<class T>
-void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
+template<class T, int a2i>
+void hmvm_seq_2(T *v, const matrix2<T> *mat, const T *b)
 {
   int i, j;
-  T tmp;
+  T tmp1;
   T *tmp2;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2: begin\n");
@@ -154,11 +184,23 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 		}
 	  }
 	  head = mat->a2[i];
-	  for(il=0;il<kt;il++){
+	  if(a2i==0){
+		for(il=0;il<kt;il++){
+		  for(it=0;it<ndl;it++){
+			ill = it+nstrtl-1;
+			itl=it+il*ndl;
+			v[ill] += mat->rowmat[head+itl] * tmp2[il];
+		  }
+		}
+	  }else{
 		for(it=0;it<ndl;it++){
 		  ill = it+nstrtl-1;
-		  itl=it+il*ndl;
-		  v[ill] += mat->rowmat[head+itl] * tmp2[il];
+		  tmp1 = 0.0;
+		  for(il=0;il<kt;il++){
+			itl=it+il*ndl;
+			tmp1 += mat->rowmat[head+itl] * tmp2[il];
+		  }
+		  v[ill] += tmp1;
 		}
 	  }
 #endif
@@ -166,14 +208,14 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 #ifndef _SKIP_DENSE
 	  head = mat->a1[i];
 	  for(il=0;il<ndl;il++){
-		tmp = 0.0;
+		tmp1 = (T)0.0;
 		ill=il+nstrtl-1;
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp += mat->rowmat[head+itl] * b[itt];
+		  tmp1 += mat->rowmat[head+itl] * b[itt];
 		}
-		v[ill] += tmp;
+		v[ill] += tmp1;
 	  }
 #endif
 	}
@@ -185,16 +227,17 @@ void hmvm_seq_2(T *v, matrix2<T> *mat, T *b)
 }
 
 // ######## ######## ######## ########
-template<class T>
-void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
+template<class T, int a2i>
+void hmvm_seq_2t(T *v, const matrix2<T> *mat, const T *b)
 {
   int i, j;
-  T *tmp;
+  T tmp1;
+  T *tmp2;
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2_t: begin\n");
   printf("hmvm_seq2_t: nlf=%d\n", mat->nlf);
 #endif
-  tmp = (T*)malloc(sizeof(T)*mat->ktmax);
+  tmp2 = (T*)malloc(sizeof(T)*mat->ktmax);
   for(i=0;i<mat->nlf;i++){
 	int ltmtx, ndl, ndt, nstrtl, nstrtt, kt;
 	int il, it, ill, itt, itl;
@@ -207,21 +250,33 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 	kt     = mat->kt[i];
 	if(ltmtx==1){
 #ifndef _SKIP_APPROX
-	  for(j=0;j<kt;j++)tmp[j]=0.0;
+	  for(j=0;j<kt;j++)tmp2[j]=0.0;
 	  head = mat->a1[i];
 	  for(il=0;il<kt;il++){
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp[il] += mat->rowmat_t[head+itl] * b[itt];
+		  tmp2[il] += mat->rowmat_t[head+itl] * b[itt];
 		}
 	  }
 	  head = mat->a2[i];
-	  for(il=0;il<ndl;il++){
+	  if(a2i==0){
 		for(it=0;it<kt;it++){
+		  for(il=0;il<ndl;il++){
+			ill=il+nstrtl-1;
+			itl=it+il*kt;
+			v[ill] += mat->rowmat_t[head+itl] * tmp2[it];
+		  }
+		}
+	  }else{
+		for(il=0;il<ndl;il++){
 		  ill=il+nstrtl-1;
-		  itl=it+il*kt;
-		  v[ill] += mat->rowmat_t[head+itl] * tmp[it];
+		  tmp1 = (T)0.0;
+		  for(it=0;it<kt;it++){
+			itl=it+il*kt;
+			tmp1 += mat->rowmat_t[head+itl] * tmp2[it];
+		  }
+		  v[ill] += tmp1;
 		}
 	  }
 #endif
@@ -230,16 +285,18 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 	  head = mat->a1[i];
 	  for(il=0;il<ndl;il++){
 		ill=il+nstrtl-1;
+		tmp1 = (T)0.0;
 		for(it=0;it<ndt;it++){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  v[ill] += mat->rowmat_t[head+itl] * b[itt];
+		  tmp1 += mat->rowmat_t[head+itl] * b[itt];
 		}
+		v[ill] += tmp1;
 	  }
 #endif
 	}
   }
-  free(tmp);
+  free(tmp2);
 #if _DEBUG_LEVEL >= 1
   printf("hmvm_seq2_t: end\n");
 #endif
@@ -248,7 +305,7 @@ void hmvm_seq_2t(T *v, matrix2<T> *mat, T *b)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
+void hmvm_seq(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result)
 {
   int i, nd;
   char fname[0xff];
@@ -262,7 +319,7 @@ void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
   if(mat!=NULL){
 	printf("hmvm_seq_1\n");
 	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_seq_1(v, mat, b);
+	hmvm_seq_1<T,0>(v, mat, b);
 	if(dump_result){
 	  snprintf(fname, 0xff, "result_seq_1_%s.txt", typeid(T).name());
 	  F = fopen(fname, "w");
@@ -273,11 +330,37 @@ void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
 
   // hmvm (loop interchanged)
   if(mat!=NULL){
+	printf("hmvm_seq_1i\n");
+	for(i=0;i<nd;i++)v[i] = 0.0;
+	hmvm_seq_1<T,1>(v, mat, b);
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_seq_1i_%s.txt", typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}
+  }
+
+  // hmvm (trans)
+  if(mat!=NULL){
 	printf("hmvm_seq_1t\n");
 	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_seq_1t(v, mat, b);
+	hmvm_seq_1t<T,0>(v, mat, b);
 	if(dump_result){
 	  snprintf(fname, 0xff, "result_seq_1t_%s.txt", typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}
+  }
+
+  // hmvm (trans, loop interchanged)
+  if(mat!=NULL){
+	printf("hmvm_seq_1ti\n");
+	for(i=0;i<nd;i++)v[i] = 0.0;
+	hmvm_seq_1t<T,1>(v, mat, b);
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_seq_1ti_%s.txt", typeid(T).name());
 	  F = fopen(fname, "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
@@ -288,7 +371,7 @@ void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
   if(mat2!=NULL){
 	printf("hmvm_seq_2\n");
 	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_seq_2(v, mat2, b);
+	hmvm_seq_2<T,0>(v, mat2, b);
 	if(dump_result){
 	  snprintf(fname, 0xff, "result_seq_2_%s.txt", typeid(T).name());
 	  F = fopen(fname, "w");
@@ -299,11 +382,37 @@ void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
 
   // hmvm using rowmat array (loop interchanged)
   if(mat2!=NULL){
+	printf("hmvm_seq_2i\n");
+	for(i=0;i<nd;i++)v[i] = 0.0;
+	hmvm_seq_2<T,1>(v, mat2, b);
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_seq_2i_%s.txt", typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}
+  }
+
+  // hmvm using rowmat array (trans)
+  if(mat2!=NULL){
 	printf("hmvm_seq_2t\n");
 	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_seq_2t(v, mat2, b);
+	hmvm_seq_2t<T,0>(v, mat2, b);
 	if(dump_result){
 	  snprintf(fname, 0xff, "result_seq_2t_%s.txt", typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}
+  }
+
+  // hmvm using rowmat array (trans, loop interchanged)
+  if(mat2!=NULL){
+	printf("hmvm_seq_2ti\n");
+	for(i=0;i<nd;i++)v[i] = 0.0;
+	hmvm_seq_2t<T,1>(v, mat2, b);
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_seq_2ti_%s.txt", typeid(T).name());
 	  F = fopen(fname, "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
@@ -317,7 +426,7 @@ void hmvm_seq(matrix<T> *mat, matrix2<T> *mat2, T *b, int dump_result)
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
+void hmvm_seq_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b)
 {
   const int L=10;
   int i, l, nd;
@@ -333,13 +442,11 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 	for(l=0;l<L;l++){
 	  for(i=0;i<nd;i++)v[i] = 0.0;
 	  d1 = omp_get_wtime();
-	  hmvm_seq_1(v, mat, b);
+	  hmvm_seq_1<T,0>(v, mat, b);
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
 	for(i=5;i<L;i++){
 	  davg += dtimes[i];
 	  if(dmin>dtimes[i])dmin=dtimes[i];
@@ -351,17 +458,35 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 
   // hmvm (loop interchanged)
   if(mat!=NULL){
+	printf("hmvm_seq_1i\n");
+	for(l=0;l<L;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  hmvm_seq_1<T,1>(v, mat, b);
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	for(i=5;i<L;i++){
+	  davg += dtimes[i];
+	  if(dmin>dtimes[i])dmin=dtimes[i];
+	  if(dmax<dtimes[i])dmax=dtimes[i];
+	}
+	davg /= (L-5);
+	printf("TIME %d hmvm_seq_1i min %e max %e avg %e\n", L, dmin, dmax, davg);
+  }
+
+  // hmvm (trans)
+  if(mat!=NULL){
 	printf("hmvm_seq_1t\n");
 	for(l=0;l<L;l++){
 	  for(i=0;i<nd;i++)v[i] = 0.0;
 	  d1 = omp_get_wtime();
-	  hmvm_seq_1t(v, mat, b);
+	  hmvm_seq_1t<T,0>(v, mat, b);
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
 	for(i=5;i<L;i++){
 	  davg += dtimes[i];
 	  if(dmin>dtimes[i])dmin=dtimes[i];
@@ -371,19 +496,37 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 	printf("TIME %d hmvm_seq_1t min %e max %e avg %e\n", L, dmin, dmax, davg);
   }
 
+  // hmvm (trans, loop interchanged)
+  if(mat!=NULL){
+	printf("hmvm_seq_1ti\n");
+	for(l=0;l<L;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  hmvm_seq_1t<T,1>(v, mat, b);
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	for(i=5;i<L;i++){
+	  davg += dtimes[i];
+	  if(dmin>dtimes[i])dmin=dtimes[i];
+	  if(dmax<dtimes[i])dmax=dtimes[i];
+	}
+	davg /= (L-5);
+	printf("TIME %d hmvm_seq_1ti min %e max %e avg %e\n", L, dmin, dmax, davg);
+  }
+
   // hmvm using rowmat array
   if(mat2!=NULL){
 	printf("hmvm_seq_2\n");
 	for(l=0;l<L;l++){
 	  for(i=0;i<nd;i++)v[i] = 0.0;
 	  d1 = omp_get_wtime();
-	  hmvm_seq_2(v, mat2, b);
+	  hmvm_seq_2<T,0>(v, mat2, b);
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
 	for(i=5;i<L;i++){
 	  davg += dtimes[i];
 	  if(dmin>dtimes[i])dmin=dtimes[i];
@@ -393,19 +536,37 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 	printf("TIME %d hmvm_seq_2 min %e max %e avg %e\n", L, dmin, dmax, davg);
   }
 
-  // hmvm using rowmat array (loop interchanged)
+  // hmvm using rowmat array (loop intechanged)
+  if(mat2!=NULL){
+	printf("hmvm_seq_2i\n");
+	for(l=0;l<L;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  hmvm_seq_2<T,1>(v, mat2, b);
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	for(i=5;i<L;i++){
+	  davg += dtimes[i];
+	  if(dmin>dtimes[i])dmin=dtimes[i];
+	  if(dmax<dtimes[i])dmax=dtimes[i];
+	}
+	davg /= (L-5);
+	printf("TIME %d hmvm_seq_2i min %e max %e avg %e\n", L, dmin, dmax, davg);
+  }
+
+  // hmvm using rowmat array (trans)
   if(mat2!=NULL){
 	printf("hmvm_seq_2t\n");
 	for(l=0;l<L;l++){
 	  for(i=0;i<nd;i++)v[i] = 0.0;
 	  d1 = omp_get_wtime();
-	  hmvm_seq_2t(v, mat2, b);
+	  hmvm_seq_2t<T,0>(v, mat2, b);
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
 	for(i=5;i<L;i++){
 	  davg += dtimes[i];
 	  if(dmin>dtimes[i])dmin=dtimes[i];
@@ -413,6 +574,25 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 	}
 	davg /= (L-5);
 	printf("TIME %d hmvm_seq_2t min %e max %e avg %e\n", L, dmin, dmax, davg);
+  }
+  // hmvm using rowmat array (trans, loop interchanged)
+  if(mat2!=NULL){
+	printf("hmvm_seq_2ti\n");
+	for(l=0;l<L;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  hmvm_seq_2t<T,1>(v, mat2, b);
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	for(i=5;i<L;i++){
+	  davg += dtimes[i];
+	  if(dmin>dtimes[i])dmin=dtimes[i];
+	  if(dmax<dtimes[i])dmax=dtimes[i];
+	}
+	davg /= (L-5);
+	printf("TIME %d hmvm_seq_2ti min %e max %e avg %e\n", L, dmin, dmax, davg);
   }
 
   free(v);
@@ -422,7 +602,7 @@ void hmvm_seq_bench(matrix<T> *mat, matrix2<T> *mat2, T *b)
 
 
 // ######## ######## ######## ########
-template void hmvm_seq<float> (matrix<float>  *mat, matrix2<float>  *mat2, float  *b, int dump_result);
-template void hmvm_seq<double>(matrix<double> *mat, matrix2<double> *mat2, double *b, int dump_result);
-template void hmvm_seq_bench<float> (matrix<float>  *mat, matrix2<float>  *mat2, float  *b);
-template void hmvm_seq_bench<double>(matrix<double> *mat, matrix2<double> *mat2, double *b);
+template void hmvm_seq<float> (const matrix<float>  *mat, const matrix2<float>  *mat2, const float  *b, int dump_result);
+template void hmvm_seq<double>(const matrix<double> *mat, const matrix2<double> *mat2, const double *b, int dump_result);
+template void hmvm_seq_bench<float> (const matrix<float>  *mat, const matrix2<float>  *mat2, const float  *b);
+template void hmvm_seq_bench<double>(const matrix<double> *mat, const matrix2<double> *mat2, const double *b);
