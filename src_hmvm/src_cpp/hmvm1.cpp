@@ -82,7 +82,9 @@ int main(int argc, char **argv)
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
 #endif
-  delete [] b;//free(b);
+  // MAGMA BLAS
+  hmvm_magma<double>(matD2, b, 0, dump_result);
+  delete [] b;
 #endif
 
 #if 1
@@ -119,7 +121,9 @@ int main(int argc, char **argv)
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, 20000+i, dump_result);
 #endif
-  delete [] fb;//free(fb);
+  // MAGMA BLAS
+  hmvm_magma<float>(matF2, fb, 0, dump_result);
+  delete [] fb;
 #endif
   delete [] matF2;
   delete [] matF;
