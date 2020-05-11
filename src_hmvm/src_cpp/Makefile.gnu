@@ -12,7 +12,6 @@ endif
 ifeq ($(GPU),1)
 CPP  = g++ -std=c++11
 CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
-#NVCC = /usr/local/cuda/bin/nvcc
 NVCC = nvcc
 # for Volta
 NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
@@ -55,6 +54,9 @@ HOBJS  = hacapk.h
 	$(NVCC) -c $(NVCCFLAGS) $(INCS) $(OPTS) $<
 
 all: $(TARGET)
+
+hmvm1.o: hacapk.h hmvm_seq.h hmvm_omp.h hmvm_cuda.h
+hmvm2.o: hacapk.h hmvm_seq.h hmvm_omp.h hmvm_cuda.h
 
 hmvm_cpu1: $(OBJS1) $(HOBJS)
 	$(CPP) -o hmvm_cpu1 $(OBJS1) -lm $(CCFLAGS)

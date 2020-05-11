@@ -165,13 +165,15 @@ void hmvm_omp_1_atomic(T *zau, const matrix<T> *mat, const T *zu)
 #ifndef _SKIP_DENSE
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
 			//zaut[ill] += mat->submat[ip].a1[itl]*zu[itt];
-#pragma omp atomic
-			zau[ill] += mat->submat[ip].a1[itl]*zu[itt];
+			tmp1 +=  mat->submat[ip].a1[itl]*zu[itt];
 		  }
+#pragma omp atomic
+		  zau[ill] += tmp1;
 		}
 #endif
 	  }
@@ -195,6 +197,7 @@ void hmvm_omp_1t(T *zau, const matrix<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
+	T tmp1;
 	T *zaut, *zbut;
 	int ls, le;
 	int i;
@@ -241,10 +244,12 @@ void hmvm_omp_1t(T *zau, const matrix<T> *mat, const T *zu)
 		}else{
 		  for(il=0; il<ndl; il++){
 			ill=il+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(it=0; it<kt; it++){
 			  itl=it+il*kt;
-			  zaut[ill] += mat->submat[ip].a2t[itl]*zbut[it];
+			  tmp1 += mat->submat[ip].a2t[itl]*zbut[it];
 			}
+			zaut[ill] += tmp1;
 		  }
 		}
 #endif
@@ -278,6 +283,7 @@ void hmvm_omp_1t_atomic(T *zau, const matrix<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
+	T tmp1;
 	T *zaut, *zbut;
 	int ls, le;
 	int i;
@@ -326,12 +332,14 @@ void hmvm_omp_1t_atomic(T *zau, const matrix<T> *mat, const T *zu)
 		}else{
 		  for(il=0; il<ndl; il++){
 			ill=il+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(it=0; it<kt; it++){
 			  itl=it+il*kt;
 			  //zaut[ill] += mat->submat[ip].a2t[itl]*zbut[it];
-#pragma omp atomic
-			  zau[ill] += mat->submat[ip].a2t[itl]*zbut[it];
+			  tmp1 += mat->submat[ip].a2t[itl]*zbut[it];
 			}
+#pragma omp atomic
+			zau[ill] += tmp1;
 		  }
 		}
 #endif
@@ -339,13 +347,15 @@ void hmvm_omp_1t_atomic(T *zau, const matrix<T> *mat, const T *zu)
 #ifndef _SKIP_DENSE
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
 			//zaut[ill] += mat->submat[ip].a1[itl]*zu[itt];
-#pragma omp atomic
-			zau[ill] += mat->submat[ip].a1[itl]*zu[itt];
+			tmp1 += mat->submat[ip].a1[itl]*zu[itt];
 		  }
+#pragma omp atomic
+		  zau[ill] += tmp1;
 		}
 #endif
 	  }
@@ -369,6 +379,7 @@ void hmvm_omp_2(T *zau, const matrix2<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
+	T tmp1;
 	T *zaut, *zbut;
 	int ls, le;
 	int i;
@@ -418,10 +429,12 @@ void hmvm_omp_2(T *zau, const matrix2<T> *mat, const T *zu)
 		}else{
 		  for(it=0; it<ndl; it++){
 			ill=it+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(il=0; il<kt; il++){
 			  itl=it+il*ndl;
-			  zaut[ill] += mat->rowmat[head+itl]*zbut[il];
+			  tmp1 += mat->rowmat[head+itl]*zbut[il];
 			}
+			zaut[ill] += tmp1;
 		  }
 		}
 #endif
@@ -430,11 +443,13 @@ void hmvm_omp_2(T *zau, const matrix2<T> *mat, const T *zu)
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
-			zaut[ill] += mat->rowmat[head+itl]*zu[itt];
+			tmp1 += mat->rowmat[head+itl]*zu[itt];
 		  }
+		  zaut[ill] += tmp1;
 		}
 #endif
 	  }
@@ -456,7 +471,7 @@ void hmvm_omp_2_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
-	//T *zaut;
+	T tmp1;
 	T *zbut;
 	int ls, le;
 	int i;
@@ -508,12 +523,14 @@ void hmvm_omp_2_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 		}else{
 		  for(it=0; it<ndl; it++){
 			ill=it+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(il=0; il<kt; il++){
 			  itl=it+il*ndl;
 			  //zaut[ill] += mat->rowmat[head+itl]*zbut[il];
-#pragma omp atomic
-			  zau[ill] += mat->rowmat[head+itl]*zbut[il];
+			  tmp1 += mat->rowmat[head+itl]*zbut[il];
 			}
+#pragma omp atomic
+			zau[ill] += tmp1;
 		  }
 		}
 #endif
@@ -521,16 +538,16 @@ void hmvm_omp_2_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 #ifndef _SKIP_DENSE
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
-		  T tmp = (T)0.0;
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
 			//zaut[ill] += mat->rowmat[head+itl]*zu[itt];
-			tmp += mat->rowmat[head+itl]*zu[itt];
+			tmp1 += mat->rowmat[head+itl]*zu[itt];
 		  }
 #pragma omp atomic
-		  zau[ill] += tmp;
+		  zau[ill] += tmp1;
 		  //printf("atomicAdd %d %e\n", ill, tmp);
 		}
 #endif
@@ -556,6 +573,7 @@ void hmvm_omp_2t(T *zau, const matrix2<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
+	T tmp1;
 	T *zaut, *zbut;
 	int ls, le;
 	int i;
@@ -605,10 +623,12 @@ void hmvm_omp_2t(T *zau, const matrix2<T> *mat, const T *zu)
 		}else{
 		  for(il=0; il<ndl; il++){
 			ill=il+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(it=0; it<kt; it++){
 			  itl=it+il*kt;
-			  zaut[ill] += mat->rowmat_t[head+itl]*zbut[it];
+			  tmp1 += mat->rowmat_t[head+itl]*zbut[it];
 			}
+			zaut[ill] += tmp1;
 		  }
 		}
 #endif
@@ -617,11 +637,13 @@ void hmvm_omp_2t(T *zau, const matrix2<T> *mat, const T *zu)
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
-			zaut[ill] += mat->rowmat_t[head+itl]*zu[itt];
+			tmp1 += mat->rowmat_t[head+itl]*zu[itt];
 		  }
+		  zaut[ill] += tmp1;
 		}
 #endif
 	  }
@@ -643,6 +665,7 @@ void hmvm_omp_2t_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 	int ip,il,it;
 	int ndl,ndt,nstrtl,nstrtt,kt,itl,itt,ill;
 
+	T tmp1;
 	T *zaut, *zbut;
 	int ls, le;
 	int i;
@@ -694,12 +717,14 @@ void hmvm_omp_2t_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 		}else{
 		  for(il=0; il<ndl; il++){
 			ill=il+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(it=0; it<kt; it++){
 			  itl=it+il*kt;
 			  //zaut[ill] += mat->rowmat_t[head+itl]*zbut[it];
-#pragma omp atomic
-			  zau[ill] += mat->rowmat_t[head+itl]*zbut[it];
+			  tmp1 += mat->rowmat_t[head+itl]*zbut[it];
 			}
+#pragma omp atomic
+			zau[ill] += tmp1;
 		  }
 		}
 #endif
@@ -708,13 +733,15 @@ void hmvm_omp_2t_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 		head=mat->a1[ip];
 		for(il=0; il<ndl; il++){
 		  ill=il+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(it=0; it<ndt; it++){
 			itt=it+nstrtt-1;
 			itl=it+il*ndt;
 			//zaut[ill] += mat->rowmat_t[head+itl]*zu[itt];
-#pragma omp atomic
-			zau[ill] += mat->rowmat_t[head+itl]*zu[itt];
+			tmp1 += mat->rowmat_t[head+itl]*zu[itt];
 		  }
+#pragma omp atomic
+			zau[ill] += tmp1;
 		}
 #endif
 	  }
