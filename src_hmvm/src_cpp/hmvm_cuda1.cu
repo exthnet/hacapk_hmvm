@@ -76,7 +76,7 @@ __global__ void hmvm_cuda_hybrid1
   int ndl, ndt, nstrtl, nstrtt;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp = 0.0;
+  T tmp1 = (T)0.0;
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
   cg::thread_block_tile<32/div> g = cg::tiled_partition<32/div>(cg::this_thread_block());
@@ -95,19 +95,19 @@ __global__ void hmvm_cuda_hybrid1
 #endif
 	head = a1[ip];
 	for(il=bid; il<kt; il+=blen){
-	  if(xid==0)tmp2[il] = 0.0;
-	  tmp = 0.0;
+	  if(xid==0)tmp2[il] = (T)0.0;
+	  tmp1 = (T)0.0;
 	  for(it=xid; it<ndt; it+=xlen){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
 		if(a2t==0){
-		  tmp += rowmat[head+itl]*d_zu[itt];
+		  tmp1 += rowmat[head+itl]*d_zu[itt];
 		}else{
-		  tmp += rowmat_t[head+itl]*d_zu[itt];
+		  tmp1 += rowmat_t[head+itl]*d_zu[itt];
 		}
 	  }
-	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
-	  if(xid==0)tmp2[il] = tmp;
+	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
+	  if(xid==0)tmp2[il] = tmp1;
 	}
 	head = a2[ip];
 	if(a2t==0){ // a2t==0
@@ -123,23 +123,25 @@ __global__ void hmvm_cuda_hybrid1
 		if(aatomic==0){ // aatomic==0
 		  for(it=bid; it<ndl; it+=blen){
 			ill=it+nstrtl-1;
-			tmp = 0.0;
+			tmp1 = (T)0.0;
 			for(il=xid; il<kt; il+=xlen){
 			  itl=it+il*ndl;
-			  tmp += rowmat[head+itl]*tmp2[il];
+			  tmp1 += rowmat[head+itl]*tmp2[il];
 			}
-			for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+			for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 			if(xid==0){
-			  myAtomicAdd(&d_zaut[ill], tmp);
+			  myAtomicAdd(&d_zaut[ill], tmp1);
 			}
 		  }
 		}else{ // aatomic==1
 		  for(it=bid; it<ndl; it+=blen){
 			ill=it+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(il=xid; il<kt; il+=xlen){
 			  itl=it+il*ndl;
-			  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			  tmp1 += rowmat[head+itl]*tmp2[il];
 			}
+			myAtomicAdd(&d_zaut[ill], tmp1);
 		  }
 		}
 	  }
@@ -156,23 +158,25 @@ __global__ void hmvm_cuda_hybrid1
 		if(aatomic==0){ // aatomic==0
 		  for(it=bid; it<ndl; it+=blen){
 			ill=it+nstrtl-1;
-			tmp = 0.0;
+			tmp1 = (T)0.0;
 			for(il=xid; il<kt; il+=xlen){
 			  itl=it*kt+il;
-			  tmp += rowmat_t[head+itl]*tmp2[il];
+			  tmp1 += rowmat_t[head+itl]*tmp2[il];
 			}
-			for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+			for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 			if(xid==0){
-			  myAtomicAdd(&d_zaut[ill], tmp);
+			  myAtomicAdd(&d_zaut[ill], tmp1);
 			}
 		  }
 		}else{ // aatomic==1
 		  for(it=bid; it<ndl; it+=blen){
 			ill=it+nstrtl-1;
+			tmp1 = (T)0.0;
 			for(il=xid; il<kt; il+=xlen){
 			  itl=it*kt+il;
-			  myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			  tmp1 += rowmat_t[head+itl]*tmp2[il];
 			}
+			myAtomicAdd(&d_zaut[ill], tmp1);
 		  }
 		}
 	  }
@@ -191,24 +195,24 @@ __global__ void hmvm_cuda_hybrid1
 #endif
 	head = a1[ip];
 	for(il=bid; il<ndl; il+=blen){
-	  tmp = 0.0;
-	  ill=il+nstrtl-1;
+	  ill = il+nstrtl-1;
+	  tmp1 = (T)0.0;
 	  for(it=xid; it<ndt; it+=xlen){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
 		if(a2t==0){ // a2t==0
-		  tmp += rowmat[head+itl]*d_zu[itt];
+		  tmp1 += rowmat[head+itl]*d_zu[itt];
 		}else{ // a2t==1
-		  tmp += rowmat_t[head+itl]*d_zu[itt];
+		  tmp1 += rowmat_t[head+itl]*d_zu[itt];
 		}
 	  }
 	  if(datomic==0){ // datomic==0
-		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
+		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 		if(xid==0){
-		  myAtomicAdd(&d_zaut[ill], tmp);
+		  myAtomicAdd(&d_zaut[ill], tmp1);
 		}
 	  }else{ // datomic==1
-		myAtomicAdd(&d_zaut[ill], tmp);
+		myAtomicAdd(&d_zaut[ill], tmp1);
 	  }
 	}
 #endif // dense
@@ -222,9 +226,11 @@ __global__ void hmvm_cuda_hybrid1
 template <class T>
 void hmvm_cuda_hybrid1_proxy
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt, int *a1, int *a2, T *rowmat, T *rowmat_t,
+ int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
+ int *a1, int *a2, T *rowmat, T *rowmat_t,
  int napprox, int *approx, int ndense, int *dense,
- int blocks, int threads, int shms, T *v, T *b, int nd, char *fname, int bench,
+ int blocks, int threads, int shms,
+ T *v, T *b, int nd, char *fname, int bench,
  int div, int a2t, int a2i, int aatomic, int datomic)
 {
   int M=5, L=M+bench;
@@ -292,11 +298,10 @@ void hmvm_cuda_hybrid1_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda1_hybrid1%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda_hybrid1%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
 }
-
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>

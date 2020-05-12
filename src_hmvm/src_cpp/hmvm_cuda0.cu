@@ -58,6 +58,7 @@ __global__ void hmvm_cuda_seq
   int ndl, ndt, nstrtl, nstrtt;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
+  T tmp1;
   //extern __shared__ T tmp2[];
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
@@ -76,16 +77,25 @@ __global__ void hmvm_cuda_seq
 	printf("%d: %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt);
 #endif
 	head = a1[ip];
-	for(il=0; il<kt; il++){
-	  tmp2[il] = 0.0;
-	  for(it=0; it<ndt; it++){
-		itt=it+nstrtt-1;
-		itl=it+il*ndt;
-		if(a2t==0){
-		  tmp2[il] += rowmat[head+itl]*d_zu[itt];
-		}else{
-		  tmp2[il] += rowmat_t[head+itl]*d_zu[itt];
+	if(a2t==0){
+	  for(il=0; il<kt; il++){
+		tmp1 = (T)0.0;
+		for(it=0; it<ndt; it++){
+		  itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp1 += rowmat[head+itl]*d_zu[itt];
 		}
+		tmp2[il] = tmp1;
+	  }
+	}else{
+	  for(il=0; il<kt; il++){
+		tmp1 = (T)0.0;
+		for(it=0; it<ndt; it++){
+		  itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp1 += rowmat_t[head+itl]*d_zu[itt];
+		}
+		tmp2[il] = tmp1;
 	  }
 	}
 	head = a2[ip];
@@ -95,34 +105,42 @@ __global__ void hmvm_cuda_seq
 		  for(it=0; it<ndl; it++){
 			ill=it+nstrtl-1;
 			itl=it+il*ndl;
-			myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			//myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			d_zaut[ill] += rowmat[head+itl]*tmp2[il];
 		  }
 		}
-	  }else{
+	  }else{ // a2i==1
 		for(it=0; it<ndl; it++){
 		  ill=it+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(il=0; il<kt; il++){
 			itl=it+il*ndl;
-			myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			//myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			tmp1 += rowmat[head+itl]*tmp2[il];
 		  }
+		  d_zaut[ill] += tmp1;
 		}
 	  }
-	}else{
+	}else{ // a2t==1
 	  if(a2i==0){
 		for(il=0; il<kt; il++){
 		  for(it=0; it<ndl; it++){
 			ill=it+nstrtl-1;
 			itl=it*kt+il;
-			myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			//myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			d_zaut[ill] += rowmat_t[head+itl]*tmp2[il];
 		  }
 		}
-	  }else{
+	  }else{ // a2i==1
 		for(it=0; it<ndl; it++){
 		  ill=it+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(il=0; il<kt; il++){
 			itl=it*kt+il;
-			myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			//myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			tmp1 += rowmat_t[head+itl]*tmp2[il];
 		  }
+		  d_zaut[ill] += tmp1;
 		}
 	  }
 	}
@@ -153,7 +171,8 @@ __global__ void hmvm_cuda_seq
 		  tmp += rowmat_t[head+itl]*d_zu[itt];
 		}
 	  }
-	  myAtomicAdd(&d_zaut[ill], tmp);
+	  //myAtomicAdd(&d_zaut[ill], tmp);
+	  d_zaut[ill] += tmp;
 	}
 #endif
   }
@@ -350,6 +369,7 @@ __global__ void hmvm_cuda_block
   int ndl, ndt, nstrtl, nstrtt;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
+  T tmp1;
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
 
@@ -367,16 +387,25 @@ __global__ void hmvm_cuda_block
 	printf("%d: %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt);
 #endif
 	head = a1[ip];
-	for(il=0; il<kt; il++){
-	  tmp2[il] = 0.0;
-	  for(it=0; it<ndt; it++){
-		itt=it+nstrtt-1;
-		itl=it+il*ndt;
-		if(a2t==0){
-		  tmp2[il] += rowmat[head+itl]*d_zu[itt];
-		}else{
-		  tmp2[il] += rowmat_t[head+itl]*d_zu[itt];
+	if(a2t==0){
+	  for(il=0; il<kt; il++){
+		tmp1 = (T)0.0;
+		for(it=0; it<ndt; it++){
+		  itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp1 += rowmat[head+itl]*d_zu[itt];
 		}
+		tmp2[il] = tmp1;
+	  }
+	}else{
+	  for(il=0; il<kt; il++){
+		tmp1 = (T)0.0;
+		for(it=0; it<ndt; it++){
+		  itt=it+nstrtt-1;
+		  itl=it+il*ndt;
+		  tmp1 += rowmat_t[head+itl]*d_zu[itt];
+		}
+		tmp2[il] = tmp1;
 	  }
 	}
 	head = a2[ip];
@@ -392,10 +421,12 @@ __global__ void hmvm_cuda_block
 	  }else{
 		for(it=0; it<ndl; it++){
 		  ill=it+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(il=0; il<kt; il++){
 			itl=it+il*ndl;
-			myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[il]);
+			tmp1 += rowmat[head+itl]*tmp2[il];
 		  }
+		  myAtomicAdd(&d_zaut[ill], tmp1);
 		}
 	  }
 	}else{
@@ -410,10 +441,12 @@ __global__ void hmvm_cuda_block
 	  }else{
 		for(it=0; it<ndl; it++){
 		  ill=it+nstrtl-1;
+		  tmp1 = (T)0.0;
 		  for(il=0; il<kt; il++){
 			itl=it*kt+il;
-			myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[il]);
+			tmp1 += rowmat_t[head+itl]*tmp2[il];
 		  }
+		  myAtomicAdd(&d_zaut[ill], tmp1);
 		}
 	  }
 	}
@@ -432,18 +465,18 @@ __global__ void hmvm_cuda_block
 #endif
 	head = a1[ip];
 	for(il=0; il<ndl; il++){
-	  T tmp = 0.0;
+	  tmp1 = (T)0.0;
 	  ill=il+nstrtl-1;
 	  for(it=0; it<ndt; it++){
 		itt=it+nstrtt-1;
 		itl=it+il*ndt;
 		if(a2t==0){
-		  tmp += rowmat[head+itl]*d_zu[itt];
+		  tmp1 += rowmat[head+itl]*d_zu[itt];
 		}else{
-		  tmp += rowmat_t[head+itl]*d_zu[itt];
+		  tmp1 += rowmat_t[head+itl]*d_zu[itt];
 		}
 	  }
-	  myAtomicAdd(&d_zaut[ill], tmp);
+	  myAtomicAdd(&d_zaut[ill], tmp1);
 	}
 #endif
   }
