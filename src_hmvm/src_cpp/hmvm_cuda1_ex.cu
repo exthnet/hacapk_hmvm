@@ -55,22 +55,14 @@ __device__ static inline float myAtomicAdd(float* address, float val)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   6x2x2x2x2=96通り
-
 */
 template <class T, int div, int a2t, int a2i, int aatomic, int datomic>
 __global__ void hmvm_cuda_hybrid1
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
  int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense)
-{
-template <class T, int div>
-__global__ void hmvm_cuda_hybrid1
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- int a2t, int a2i, int aatomic, int datomic)
+ int napprox, int *approx, int ndense, int *dense
+ )
 {
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cuda_hybrid1 : begin\n");
@@ -116,6 +108,7 @@ __global__ void hmvm_cuda_hybrid1
 	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 	  if(xid==0)tmp2[il] = tmp1;
 	}
+	__syncwarp();
 	head = a2[ip];
 	if(a2t==0){ // a2t==0
 	  if(a2i==0){ // a2i==0

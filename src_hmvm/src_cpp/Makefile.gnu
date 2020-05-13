@@ -14,8 +14,8 @@ CPP  = g++ -std=c++11
 CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
 NVCC = nvcc
 # for Volta
-NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
---generate-code arch=compute_70,code=sm_70
+#NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
+#--generate-code arch=compute_70,code=sm_70
 # for Volta (Pascal mode)
 #NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_60,code=sm_70
@@ -25,6 +25,9 @@ NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_60,code=sm_60 \
 #--generate-code arch=compute_70,code=sm_70
 # 53=JetsonTX1, 60=Pascal, 70=Volta
+# test
+NVCCFLAGS = -g -O3 -Xcompiler "-O3 -fopenmp -rdynamic" -lineinfo \
+--generate-code arch=compute_70,code=sm_70
 TARGET = hmvm_gpu1 hmvm_gpu2
 else
 CPP  = g++ -std=c++11

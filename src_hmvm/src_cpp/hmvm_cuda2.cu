@@ -111,6 +111,7 @@ __global__ void hmvm_cuda_hybrid2
 	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 	  if(xid==0)tmp2[il] = tmp1;
 	}
+	__syncthreads();
 	head = a2[ip];
 	if(a2t==0){ // a2t==0
 	  if(a2i==0){ // a2i==0

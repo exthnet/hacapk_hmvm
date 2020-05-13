@@ -181,6 +181,7 @@ __global__ void hmvm_cuda_hybrid3
 		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
 		if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = tmp;
       }
+	  __syncwarp();
 	  head = a2[ip];
 	  for(il=bid; il<kt; il+=blen){
 	    for(it=xid; it<ndl; it+=xlen){

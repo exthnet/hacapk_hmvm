@@ -55,7 +55,6 @@ __device__ static inline float myAtomicAdd(float* address, float val)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか(0,1)
   6x2x2x2x2=96通り
-
 */
 template <class T, int div>
 __global__ void hmvm_cuda_hybrid1
@@ -109,6 +108,7 @@ __global__ void hmvm_cuda_hybrid1
 	  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 	  if(xid==0)tmp2[il] = tmp1;
 	}
+	__syncwarp();
 	head = a2[ip];
 	if(a2t==0){ // a2t==0
 	  if(a2i==0){ // a2i==0
@@ -403,6 +403,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	char name[0xff], fname[0xff];
 	snprintf(name,0xff,"hybrid1_div%d_a2t%d_a2i%d_aa%d_da%d_%s", div, a2t, a2i, aa, da, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda1_%s.txt", name);
+	printf("subkernel=%d = %s\n", subkernel, fname);
 	printf("fname = %s\n", fname);
 	// EXEC
 	hmvm_cuda_hybrid1_proxy<T>
