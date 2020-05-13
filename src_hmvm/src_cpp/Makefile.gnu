@@ -16,6 +16,8 @@ NVCC = nvcc
 # for Volta
 #NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_70,code=sm_70
+#NVCCFLAGS = -O3 -Xcompiler "-O3 -fopenmp" \
+#--generate-code arch=compute_70,code=sm_70
 # for Volta (Pascal mode)
 #NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_60,code=sm_70
@@ -26,7 +28,7 @@ NVCC = nvcc
 #--generate-code arch=compute_70,code=sm_70
 # 53=JetsonTX1, 60=Pascal, 70=Volta
 # test
-NVCCFLAGS = -g -O3 -Xcompiler "-O3 -fopenmp -rdynamic" -lineinfo \
+NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp -rdynamic" \
 --generate-code arch=compute_70,code=sm_70
 TARGET = hmvm_gpu1 hmvm_gpu2
 else
@@ -40,7 +42,8 @@ endif
 OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
 CUOBJS = hmvm_cuda0.o hmvm_cuda1.o hmvm_cuda2.o hmvm_cuda3.o
-CUOBJS_EX = hmvm_cuda0.o hmvm_cuda1_ex.o hmvm_cuda2_ex.o hmvm_cuda3_ex.o
+# C++ template extension
+#CUOBJS = hmvm_cuda0.o hmvm_cuda1_ex.o hmvm_cuda2_ex.o hmvm_cuda3_ex.o
 HOBJS  = hacapk.h
 
 ######################

@@ -83,13 +83,15 @@ int main(int argc, char **argv)
   for(i=0;i<1536;i++)hmvm_cuda2<double>(matD2, b, 10000+i, dump_result);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
+  //i=193; hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
+  //i=577; hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
 #endif
   // MAGMA BLAS
   //hmvm_magma<double>(matD2, b, 0, dump_result);
   delete [] b;
 #endif
 
-#if 0
+#if 1
   // ######## ######## ######## ######## ######## ######## ######## ########
   // float
   // ######## ######## ######## ######## ######## ######## ######## ########
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
   // hybrid2: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda2<float>(matF2, fb, 10000+i, dump_result);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
-  //for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, 20000+i, dump_result);
+  for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, 20000+i, dump_result);
 #endif
   // MAGMA BLAS
   //hmvm_magma<float>(matF2, fb, 0, dump_result);

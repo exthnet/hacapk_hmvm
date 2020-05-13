@@ -70,7 +70,6 @@ __global__ void hmvm_cuda_hybrid2
   printf("hmvm_cuda_hybrid2 : begin\n");
 #endif
   int gid   = blockIdx.x;
-  //int tid   = threadIdx.x;
   int bid   = threadIdx.x/(32/div);
   int blen  = mul*div;
   int xid   = threadIdx.x%(32/div);
@@ -407,6 +406,7 @@ void hmvm_cuda2(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	char name[0xff], fname[0xff];
 	snprintf(name,0xff,"hybrid2_div%d_mul%d_a2t%d_a2i%d_aa%d_da%d_%s", div, mul, a2t, a2i, aa, da, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda2_%s.txt", name);
+	printf("subkernel=%d = %s\n", subkernel, fname);
 	printf("fname = %s\n", fname);
 	// EXEC
 	hmvm_cuda_hybrid2_proxy<T>

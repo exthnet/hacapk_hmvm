@@ -78,7 +78,7 @@ __global__ void hmvm_cuda_hybrid2
   int ndl, ndt, nstrtl, nstrtt;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp = 0.0;
+  T tmp1 = (T)0.0;
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
   cg::thread_block_tile<32/div> g = cg::tiled_partition<32/div>(cg::this_thread_block());

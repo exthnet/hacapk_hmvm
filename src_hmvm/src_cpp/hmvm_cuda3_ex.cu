@@ -63,7 +63,8 @@ __global__ void hmvm_cuda_hybrid3
 (T *d_zaut, T *d_zu, int nlf, int ktmax,
  int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
  int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense)
+ int napprox, int *approx, int ndense, int *dense
+)
 {
 #if _DEBUG_LEVEL >= 2
   printf("hmvm_cuda_hybrid3 : begin\n");
@@ -76,7 +77,7 @@ __global__ void hmvm_cuda_hybrid3
   int ndl, ndt, nstrtl, nstrtt, ltmtx;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
-  T tmp = 0.0;
+  T tmp1 = (T)0.0;
   extern __shared__ __align__(sizeof(T)) unsigned char my_smem[];
   T *tmp2 = reinterpret_cast<T *>(my_smem);
   cg::thread_block_tile<32/div> g = cg::tiled_partition<32/div>(cg::this_thread_block());
@@ -99,24 +100,92 @@ __global__ void hmvm_cuda_hybrid3
 	  head = a1[ip];
 	  for(il=bid; il<kt; il+=blen){
   	    if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = 0.0;
-		tmp = 0.0;
+		tmp1 = (T)0.0;
 		for(it=xid; it<ndt; it+=xlen){
 	      itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp += rowmat[head+itl]*d_zu[itt];
+		  if(a2t==0){
+			tmp1 += rowmat[head+itl]*d_zu[itt];
+		  }else{
+			tmp1 += rowmat_t[head+itl]*d_zu[itt];
+		  }
         }
-		//for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down_sync(0xffff, tmp, offset, warpSize);
-		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
-		if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = tmp;
+		for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
+		if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = tmp1;
       }
+	  __syncwarp();
 	  head = a2[ip];
-	  for(il=bid; il<kt; il+=blen){
-	    for(it=xid; it<ndl; it+=xlen){
-	      ill=it+nstrtl-1;
-		  itl=it+il*ndl;
-		  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
-        }
-      }
+	  if(a2t==0){ // a2t==0
+		if(a2i==0){ // a2i==0
+		  for(il=bid; il<kt; il+=blen){
+			for(it=xid; it<ndl; it+=xlen){
+			  ill=it+nstrtl-1;
+			  itl=it+il*ndl;
+			  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
+			}
+		  }
+		}else{ // a2i==1
+		  if(aatomic==0){ // aatomic==0
+			for(it=bid; it<ndl; it+=blen){
+			  ill=it+nstrtl-1;
+			  tmp1 = (T)0.0;
+			  for(il=xid; il<kt; il+=xlen){
+				itl=it+il*ndl;
+				tmp1 += rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  }
+			  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
+			  if(xid==0){
+				myAtomicAdd(&d_zaut[ill], tmp1);
+			  }
+			}
+		  }else{ // atomic==1
+			for(it=bid; it<ndl; it+=blen){
+			  ill=it+nstrtl-1;
+			  tmp1 = (T)0.0;
+			  for(il=xid; il<kt; il+=xlen){
+				itl=it+il*ndl;
+				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  }
+			  myAtomicAdd(&d_zaut[ill], tmp1);
+			}
+		  }
+		}
+	  }else{ // a2t==1
+		if(a2i==0){ // a2i==0
+		  for(il=bid; il<kt; il+=blen){
+			for(it=xid; it<ndl; it+=xlen){
+			  ill=it+nstrtl-1;
+			  itl=it+il*ndl;
+			  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
+			}
+		  }
+		}else{ // a2i==1
+		  if(aatomic==0){ // aatomic==0
+			for(it=bid; it<kt; it+=blen){
+			  ill=it+nstrtl-1;
+			  tmp1 = (T)0.0;
+			  for(il=xid; il<ndl; il+=xlen){
+				itl=it+il*ndl;
+				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  }
+			  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
+			  if(xid==0){
+				myAtomicAdd(&d_zaut[ill], tmp1);
+			  }
+			}
+		  }else{ // atomic==1
+			for(it=bid; it<kt; it+=blen){
+			  ill=it+nstrtl-1;
+			  tmp1 = (T)0.0;
+			  for(il=xid; il<ndl; il+=xlen){
+				itl=it+il*ndl;
+				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  }
+			  myAtomicAdd(&d_zaut[ill], tmp1);
+			}
+		  }
+		}
+	  }
     }
 #endif // approx
   }else{
@@ -134,21 +203,24 @@ __global__ void hmvm_cuda_hybrid3
 #endif
 	  head = a1[ip];
 	  for(il=bid; il<ndl; il+=blen){
-		tmp = 0.0;
+		tmp1 = (T)0.0;
 		ill=il+nstrtl-1;
 		for(it=xid; it<ndt; it+=xlen){
 		  itt=it+nstrtt-1;
 		  itl=it+il*ndt;
-		  tmp += rowmat[head+itl]*d_zu[itt];
-		}
-		if(datomic==0){
-		  //for (int offset = warpSize/(2*div); offset > 0; offset /= 2)tmp += __shfl_down(tmp, offset);
-		  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp += g.shfl_down(tmp, offset);
-		  if(xid==0){
-			atomicAdd(&d_zaut[ill], tmp);
+		  if(a2t==0){ // a2t==0
+			tmp1 += rowmat[head+itl]*d_zu[itt];
+		  }else{ // a2t==1
+			tmp1 += rowmat_t[head+itl]*d_zu[itt];
 		  }
-		}else{
-		  atomicAdd(&d_zaut[ill], tmp);
+		}
+		if(datomic==0){ // datomic==0
+		  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
+		  if(xid==0){
+			atomicAdd(&d_zaut[ill], tmp1);
+		  }
+		}else{ // datomic==1
+		  atomicAdd(&d_zaut[ill], tmp1);
 		}
 	  }
 	}
@@ -206,7 +278,7 @@ void hmvm_cuda_hybrid3_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda3_hybrid3%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda_hybrid3%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
 }
