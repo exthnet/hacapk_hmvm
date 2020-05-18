@@ -7,6 +7,7 @@
 #include "hmvm_seq.h"
 #include "hmvm_omp.h"
 #include "hmvm_cuda.h"
+#include "hmvm_magma.h"
 
 int main(int argc, char **argv)
 {
@@ -77,17 +78,15 @@ int main(int argc, char **argv)
   for(i=0;i<4;i++)hmvm_cuda0<double>(matD2, b, 10+i, dump_result);
   // hybrid1: DIV(1,2,4,8,16,32), ATOMIC(1,2), = 96patterns
   for(i=0;i<96;i++)hmvm_cuda1<double>(matD2, b, 1000+i, dump_result);
-  //i=13; hmvm_cuda1<double>(matD2, b, 1000+i, dump_result);
-  //i=37; hmvm_cuda1<double>(matD2, b, 1000+i, dump_result);
   // hybrid2: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda2<double>(matD2, b, 10000+i, dump_result);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
-  //i=193; hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
-  //i=577; hmvm_cuda3<double>(matD2, b, 20000+i, dump_result);
 #endif
   // MAGMA BLAS
-  //hmvm_magma<double>(matD2, b, 0, dump_result);
+  hmvm_magma<double>(matD2, b, 0, dump_result);
+  hmvm_magma_batched<double>(matD2, b, 0, dump_result);
+  hmvm_magma_batched<double>(matD2, b, 1, dump_result);
   delete [] b;
 #endif
 
@@ -126,7 +125,10 @@ int main(int argc, char **argv)
   for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, 20000+i, dump_result);
 #endif
   // MAGMA BLAS
-  //hmvm_magma<float>(matF2, fb, 0, dump_result);
+  // MAGMA BLAS
+  hmvm_magma<float>(matF2, fb, 0, dump_result);
+  hmvm_magma_batched<float>(matF2, fb, 0, dump_result);
+  hmvm_magma_batched<float>(matF2, fb, 1, dump_result);
   delete [] fb;
 #endif
   delete [] matF2;

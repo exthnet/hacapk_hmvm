@@ -13,6 +13,7 @@ ifeq ($(GPU),1)
 CPP  = g++ -std=c++11
 CCFLAGS  = -O3 -fopenmp -D_USE_CUDA
 NVCC = nvcc
+INCS = -I/uvdata/usr/center/a49979a/opt/magma-2.5.3-patched/include
 # for Volta
 #NVCCFLAGS = -g -lineinfo -O3 -Xcompiler "-O3 -fopenmp" \
 #--generate-code arch=compute_70,code=sm_70
@@ -41,7 +42,7 @@ endif
 # Object files
 OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
-CUOBJS = hmvm_cuda0.o hmvm_cuda1.o hmvm_cuda2.o hmvm_cuda3.o
+CUOBJS = hmvm_cuda0.o hmvm_cuda1.o hmvm_cuda2.o hmvm_cuda3.o hmvm_magma.o  hmvm_magma_batched.o
 # C++ template extension
 #CUOBJS = hmvm_cuda0.o hmvm_cuda1_ex.o hmvm_cuda2_ex.o hmvm_cuda3_ex.o
 HOBJS  = hacapk.h
@@ -70,7 +71,7 @@ hmvm_cpu1: $(OBJS1) $(HOBJS)
 hmvm_cpu2: $(OBJS2) $(HOBJS)
 	$(CPP) -o hmvm_cpu2 $(OBJS2) -lm $(CCFLAGS)
 hmvm_gpu1: $(OBJS1) $(HOBJS) $(CUOBJS)
-	$(NVCC) -o hmvm_gpu1 $(OBJS1) $(CUOBJS) -lm $(NVCCFLAGS)
+	$(NVCC) -o hmvm_gpu1 $(OBJS1) $(CUOBJS) -lm $(NVCCFLAGS) -L/uvdata/usr/center/a49979a/opt/magma-2.5.3-patched/lib -lmagma
 hmvm_gpu2: $(OBJS2) $(HOBJS) $(CUOBJS)
 	$(NVCC) -o hmvm_gpu2 $(OBJS2) $(CUOBJS) -lm $(NVCCFLAGS)
 
