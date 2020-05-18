@@ -14,9 +14,11 @@
 // ######## ######## ######## ######## ######## ######## ######## ########
 /*
   magma batched
+  行列積を2つにわける
+  (多すぎるとダメらしい)
  */
 
-void  hmvm_magma_batched_calc
+void  hmvm_magma_batched2_calc
 (
  int n1a,
  double **d_As1a, double **d_Xs1a, double **d_Ys1a,
@@ -26,10 +28,14 @@ void  hmvm_magma_batched_calc
  double **d_As1b, double **d_Xs1b, double **d_Ys1b,
  int *d_Ms1b, int *d_Ns1b,
  int *d_lddas1b, int *d_incxs1b, int *d_incys1b,
- int n2,
- double **d_As2, double **d_Xs2, double **d_Ys2,
- int *d_Ms2, int *d_Ns2,
- int *d_lddas2, int *d_incxs2, int *d_incys2,
+ int n2a,
+ double **d_As2a, double **d_Xs2a, double **d_Ys2a,
+ int *d_Ms2a, int *d_Ns2a,
+ int *d_lddas2a, int *d_incxs2a, int *d_incys2a,
+ int n2b,
+ double **d_As2b, double **d_Xs2b, double **d_Ys2b,
+ int *d_Ms2b, int *d_Ns2b,
+ int *d_lddas2b, int *d_incxs2b, int *d_incys2b,
  magma_queue_t queue
  )
 {
@@ -46,13 +52,18 @@ void  hmvm_magma_batched_calc
 	       d_Xs1b, d_incxs1b,
 	       d_Ys1b, d_incys1b, n1b, queue);
   magmablas_dgemv_vbatched_atomic
-	(MagmaTrans, d_Ms2, d_Ns2,
-	 done, d_As2, d_lddas2,
-	       d_Xs2, d_incxs2,
-	       d_Ys2, d_incys2, n2, queue);
+	(MagmaTrans, d_Ms2a, d_Ns2a,
+	 done, d_As2a, d_lddas2a,
+	       d_Xs2a, d_incxs2a,
+	       d_Ys2a, d_incys2a, n2a, queue);
+  magmablas_dgemv_vbatched_atomic
+	(MagmaTrans, d_Ms2b, d_Ns2b,
+	 done, d_As2b, d_lddas2b,
+	       d_Xs2b, d_incxs2b,
+	       d_Ys2b, d_incys2b, n2b, queue);
 }
 
-void  hmvm_magma_batched_calc
+void  hmvm_magma_batched2_calc
 (
  int n1a,
  float **d_As1a, float **d_Xs1a, float **d_Ys1a,
@@ -62,10 +73,14 @@ void  hmvm_magma_batched_calc
  float **d_As1b, float **d_Xs1b, float **d_Ys1b,
  int *d_Ms1b, int *d_Ns1b,
  int *d_lddas1b, int *d_incxs1b, int *d_incys1b,
- int n2,
- float **d_As2, float **d_Xs2, float **d_Ys2,
- int *d_Ms2, int *d_Ns2,
- int *d_lddas2, int *d_incxs2, int *d_incys2,
+ int n2a,
+ float **d_As2a, float **d_Xs2a, float **d_Ys2a,
+ int *d_Ms2a, int *d_Ns2a,
+ int *d_lddas2a, int *d_incxs2a, int *d_incys2a,
+ int n2b,
+ float **d_As2b, float **d_Xs2b, float **d_Ys2b,
+ int *d_Ms2b, int *d_Ns2b,
+ int *d_lddas2b, int *d_incxs2b, int *d_incys2b,
  magma_queue_t queue
  )
 {
@@ -82,13 +97,18 @@ void  hmvm_magma_batched_calc
 	       d_Xs1b, d_incxs1b,
 	       d_Ys1b, d_incys1b, n1b, queue);
   magmablas_sgemv_vbatched_atomic
-	(MagmaTrans, d_Ms2, d_Ns2,
-	 done, d_As2, d_lddas2,
-	       d_Xs2, d_incxs2,
-	       d_Ys2, d_incys2, n2, queue);
+	(MagmaTrans, d_Ms2a, d_Ns2a,
+	 done, d_As2a, d_lddas2a,
+	       d_Xs2a, d_incxs2a,
+	       d_Ys2a, d_incys2a, n2a, queue);
+  magmablas_sgemv_vbatched_atomic
+	(MagmaTrans, d_Ms2b, d_Ns2b,
+	 done, d_As2b, d_lddas2b,
+	       d_Xs2b, d_incxs2b,
+	       d_Ys2b, d_incys2b, n2b, queue);
 }
 
-void  hmvm_magma_batched_calc_nocheck
+void  hmvm_magma_batched2_calc_nocheck
 (
  int n1a,
  double **d_As1a, double **d_Xs1a, double **d_Ys1a,
@@ -98,10 +118,14 @@ void  hmvm_magma_batched_calc_nocheck
  double **d_As1b, double **d_Xs1b, double **d_Ys1b,
  int *d_Ms1b, int *d_Ns1b,
  int *d_lddas1b, int *d_incxs1b, int *d_incys1b,
- int n2,
- double **d_As2, double **d_Xs2, double **d_Ys2,
- int *d_Ms2, int *d_Ns2,
- int *d_lddas2, int *d_incxs2, int *d_incys2,
+ int n2a,
+ double **d_As2a, double **d_Xs2a, double **d_Ys2a,
+ int *d_Ms2a, int *d_Ns2a,
+ int *d_lddas2a, int *d_incxs2a, int *d_incys2a,
+ int n2b,
+ double **d_As2b, double **d_Xs2b, double **d_Ys2b,
+ int *d_Ms2b, int *d_Ns2b,
+ int *d_lddas2b, int *d_incxs2b, int *d_incys2b,
  magma_queue_t queue
  )
 {
@@ -118,13 +142,18 @@ void  hmvm_magma_batched_calc_nocheck
 	       d_Xs1b, d_incxs1b,
 	       d_Ys1b, d_incys1b, n1b, queue);
   magmablas_dgemv_vbatched_nocheck_atomic
-	(MagmaTrans, d_Ms2, d_Ns2,
-	 done, d_As2, d_lddas2,
-	       d_Xs2, d_incxs2,
-	       d_Ys2, d_incys2, n2, queue);
+	(MagmaTrans, d_Ms2a, d_Ns2a,
+	 done, d_As2a, d_lddas2a,
+	       d_Xs2a, d_incxs2a,
+	       d_Ys2a, d_incys2a, n2a, queue);
+  magmablas_dgemv_vbatched_nocheck_atomic
+	(MagmaTrans, d_Ms2b, d_Ns2b,
+	 done, d_As2b, d_lddas2b,
+	       d_Xs2b, d_incxs2b,
+	       d_Ys2b, d_incys2b, n2b, queue);
 }
 
-void  hmvm_magma_batched_calc_nocheck
+void  hmvm_magma_batched2_calc_nocheck
 (
  int n1a,
  float **d_As1a, float **d_Xs1a, float **d_Ys1a,
@@ -134,10 +163,14 @@ void  hmvm_magma_batched_calc_nocheck
  float **d_As1b, float **d_Xs1b, float **d_Ys1b,
  int *d_Ms1b, int *d_Ns1b,
  int *d_lddas1b, int *d_incxs1b, int *d_incys1b,
- int n2,
- float **d_As2, float **d_Xs2, float **d_Ys2,
- int *d_Ms2, int *d_Ns2,
- int *d_lddas2, int *d_incxs2, int *d_incys2,
+ int n2a,
+ float **d_As2a, float **d_Xs2a, float **d_Ys2a,
+ int *d_Ms2a, int *d_Ns2a,
+ int *d_lddas2a, int *d_incxs2a, int *d_incys2a,
+ int n2b,
+ float **d_As2b, float **d_Xs2b, float **d_Ys2b,
+ int *d_Ms2b, int *d_Ns2b,
+ int *d_lddas2b, int *d_incxs2b, int *d_incys2b,
  magma_queue_t queue
  )
 {
@@ -154,14 +187,19 @@ void  hmvm_magma_batched_calc_nocheck
 	       d_Xs1b, d_incxs1b,
 	       d_Ys1b, d_incys1b, n1b, queue);
   magmablas_sgemv_vbatched_nocheck_atomic
-	(MagmaTrans, d_Ms2, d_Ns2,
-	 done, d_As2, d_lddas2,
-	       d_Xs2, d_incxs2,
-	       d_Ys2, d_incys2, n2, queue);
+	(MagmaTrans, d_Ms2a, d_Ns2a,
+	 done, d_As2a, d_lddas2a,
+	       d_Xs2a, d_incxs2a,
+	       d_Ys2a, d_incys2a, n2a, queue);
+  magmablas_sgemv_vbatched_nocheck_atomic
+	(MagmaTrans, d_Ms2b, d_Ns2b,
+	 done, d_As2b, d_lddas2b,
+	       d_Xs2b, d_incxs2b,
+	       d_Ys2b, d_incys2b, n2b, queue);
 }
 
 template <class T>
-void hmvm_magma_batched_proxy
+void hmvm_magma_batched2_proxy
 (
  int nbatch1a,
  T **d_As1a, T **d_Xs1a, T **d_Ys1a,
@@ -171,10 +209,14 @@ void hmvm_magma_batched_proxy
  T **d_As1b, T **d_Xs1b, T **d_Ys1b,
  int *d_Ms1b, int *d_Ns1b,
  int *d_lddas1b, int *d_incxs1b, int *d_incys1b,
- int nbatch2,
- T **d_As2, T **d_Xs2, T **d_Ys2,
- int *d_Ms2, int *d_Ns2,
- int *d_lddas2, int *d_incxs2, int *d_incys2,
+ int nbatch2a,
+ T **d_As2a, T **d_Xs2a, T **d_Ys2a,
+ int *d_Ms2a, int *d_Ns2a,
+ int *d_lddas2a, int *d_incxs2a, int *d_incys2a,
+ int nbatch2b,
+ T **d_As2b, T **d_Xs2b, T **d_Ys2b,
+ int *d_Ms2b, int *d_Ns2b,
+ int *d_lddas2b, int *d_incxs2b, int *d_incys2b,
  magma_queue_t queue, int opt,
  T *d_v, int nd, char *fname, int bench
 ){
@@ -196,19 +238,21 @@ void hmvm_magma_batched_proxy
 	d1 = omp_get_wtime();
 
 	if(opt==0){
-	  hmvm_magma_batched_calc
+	  hmvm_magma_batched2_calc
 		(
 		 nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
 		 nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-		 nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+		 nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+		 nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
 		 queue
 		 );
 	}else{
-	  hmvm_magma_batched_calc_nocheck
+	  hmvm_magma_batched2_calc_nocheck
 		(
 		 nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
 		 nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-		 nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+		 nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+		 nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
 		 queue
 		 );
 	}
@@ -233,7 +277,7 @@ void hmvm_magma_batched_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_magma_batched%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_magma_batched2%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
 #endif
@@ -244,7 +288,7 @@ void hmvm_magma_batched_proxy
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>
-void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
+void hmvm_magma_batched2(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 {
   matrix2<T> d_sm;
   int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
@@ -253,7 +297,7 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   int ip;
   int len;
   cudaError_t ret;
-  printf("hmvm_magma_batched_%s: begin\n", typeid(T).name()); fflush(stdout);
+  printf("hmvm_magma_batched2_%s: begin\n", typeid(T).name()); fflush(stdout);
   v    = new T[nd];
   for(i=0;i<nd;i++){
 	v[i] = (T)0.0;
@@ -318,7 +362,7 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   magma_device_t dev;
   magma_queue_t queue;
   magma_queue_create(dev, &queue);
-  int nbatch1a, nbatch1b, nbatch2;
+  int nbatch1a, nbatch1b, nbatch2a, nbatch2b;
   T **tmpvec;
   tmpvec = (T**)malloc(sizeof(T*)*nlf);
   for(ip=0;ip<nlf;ip++){
@@ -333,9 +377,12 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   T **h_As1b, **h_Xs1b, **h_Ys1b;
   int *h_Ms1b, *h_Ns1b;
   int *h_lddas1b, *h_incxs1b, *h_incys1b;
-  T **h_As2, **h_Xs2, **h_Ys2;
-  int *h_Ms2, *h_Ns2;
-  int *h_lddas2, *h_incxs2, *h_incys2;
+  T **h_As2a, **h_Xs2a, **h_Ys2a;
+  int *h_Ms2a, *h_Ns2a;
+  int *h_lddas2a, *h_incxs2a, *h_incys2a;
+  T **h_As2b, **h_Xs2b, **h_Ys2b;
+  int *h_Ms2b, *h_Ns2b;
+  int *h_lddas2b, *h_incxs2b, *h_incys2b;
   // device
   T **d_As1a, **d_Xs1a, **d_Ys1a;
   int *d_Ms1a, *d_Ns1a;
@@ -343,9 +390,12 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   T **d_As1b, **d_Xs1b, **d_Ys1b;
   int *d_Ms1b, *d_Ns1b;
   int *d_lddas1b, *d_incxs1b, *d_incys1b;
-  T **d_As2, **d_Xs2, **d_Ys2;
-  int *d_Ms2, *d_Ns2;
-  int *d_lddas2, *d_incxs2, *d_incys2;
+  T **d_As2a, **d_Xs2a, **d_Ys2a;
+  int *d_Ms2a, *d_Ns2a;
+  int *d_lddas2a, *d_incxs2a, *d_incys2a;
+  T **d_As2b, **d_Xs2b, **d_Ys2b;
+  int *d_Ms2b, *d_Ns2b;
+  int *d_lddas2b, *d_incxs2b, *d_incys2b;
   // allocation
   // 1a approx. 1
   h_As1a = (T**)malloc(sizeof(T*)*(nlf+1));
@@ -381,23 +431,40 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   CHECK_DO(cudaMalloc((void**)&d_lddas1b, sizeof(int)*(nlf+1)),"cudaMalloc ");
   CHECK_DO(cudaMalloc((void**)&d_incxs1b, sizeof(int)*(nlf+1)),"cudaMalloc ");
   CHECK_DO(cudaMalloc((void**)&d_incys1b, sizeof(int)*(nlf+1)),"cudaMalloc ");
-  // 2. dense
-  h_As2 = (T**)malloc(sizeof(T*)*(nlf+1));
-  h_Xs2 = (T**)malloc(sizeof(T*)*(nlf+1));
-  h_Ys2 = (T**)malloc(sizeof(T*)*(nlf+1));
-  h_Ms2 = (int*)malloc(sizeof(int)*(nlf+1));
-  h_Ns2 = (int*)malloc(sizeof(int)*(nlf+1));
-  h_lddas2 = (int*)malloc(sizeof(int)*(nlf+1));
-  h_incxs2 = (int*)malloc(sizeof(int)*(nlf+1));
-  h_incys2 = (int*)malloc(sizeof(int)*(nlf+1));
-  CHECK_DO(cudaMalloc((void**)&d_As2, sizeof(T*)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_Xs2, sizeof(T*)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_Ys2, sizeof(T*)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_Ms2, sizeof(int)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_Ns2, sizeof(int)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_lddas2, sizeof(int)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_incxs2, sizeof(int)*(nlf+1)),"cudaMalloc ");
-  CHECK_DO(cudaMalloc((void**)&d_incys2, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  // 2a. dense. 1
+  h_As2a = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Xs2a = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Ys2a = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Ms2a = (int*)malloc(sizeof(int)*(nlf+1));
+  h_Ns2a = (int*)malloc(sizeof(int)*(nlf+1));
+  h_lddas2a = (int*)malloc(sizeof(int)*(nlf+1));
+  h_incxs2a = (int*)malloc(sizeof(int)*(nlf+1));
+  h_incys2a = (int*)malloc(sizeof(int)*(nlf+1));
+  CHECK_DO(cudaMalloc((void**)&d_As2a, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Xs2a, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ys2a, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ms2a, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ns2a, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_lddas2a, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_incxs2a, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_incys2a, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  // 2b. dense. 2
+  h_As2b = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Xs2b = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Ys2b = (T**)malloc(sizeof(T*)*(nlf+1));
+  h_Ms2b = (int*)malloc(sizeof(int)*(nlf+1));
+  h_Ns2b = (int*)malloc(sizeof(int)*(nlf+1));
+  h_lddas2b = (int*)malloc(sizeof(int)*(nlf+1));
+  h_incxs2b = (int*)malloc(sizeof(int)*(nlf+1));
+  h_incys2b = (int*)malloc(sizeof(int)*(nlf+1));
+  CHECK_DO(cudaMalloc((void**)&d_As2b, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Xs2b, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ys2b, sizeof(T*)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ms2b, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_Ns2b, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_lddas2b, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_incxs2b, sizeof(int)*(nlf+1)),"cudaMalloc ");
+  CHECK_DO(cudaMalloc((void**)&d_incys2b, sizeof(int)*(nlf+1)),"cudaMalloc ");
   // construction
   // 1a. approx. 1
   n=0;
@@ -465,9 +532,9 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   cudaMemcpy(d_lddas1b, h_lddas1b, sizeof(int)*n, cudaMemcpyHostToDevice);
   cudaMemcpy(d_incxs1b, h_incxs1b, sizeof(int)*n, cudaMemcpyHostToDevice);
   cudaMemcpy(d_incys1b, h_incys1b, sizeof(int)*n, cudaMemcpyHostToDevice);
-  // 2. dense
+  // 2a. dense 1
   n = 0;
-  for(ip=0; ip<nlf; ip++){
+  for(ip=0; ip<nlf/2; ip++){
 	ndl    = mat2->ndl[ip];
 	ndt    = mat2->ndt[ip];
 	nstrtl = mat2->nstrtl[ip];
@@ -476,27 +543,59 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	if(ltmtx==1){
 	} else if(ltmtx==2){
 	  head = mat2->a1[ip];
-	  h_As2[n] = &d_sm.rowmat[head];
-	  h_Xs2[n] = &d_b[nstrtt-1];
-	  h_Ys2[n] = &d_v[nstrtl-1];
-	  h_Ms2[n] = ndt;
-	  h_Ns2[n] = ndl;
-	  h_lddas2[n] = ndt;
-	  h_incxs2[n] = 1;
-	  h_incys2[n] = 1;
+	  h_As2a[n] = &d_sm.rowmat[head];
+	  h_Xs2a[n] = &d_b[nstrtt-1];
+	  h_Ys2a[n] = &d_v[nstrtl-1];
+	  h_Ms2a[n] = ndt;
+	  h_Ns2a[n] = ndl;
+	  h_lddas2a[n] = ndt;
+	  h_incxs2a[n] = 1;
+	  h_incys2a[n] = 1;
 	  n++;
 	  //cublasDgemv(handle,CUBLAS_OP_T, ndt,ndl, &done, &d_sm.rowmat[head], ndt,&d_zu[nstrtt-1],1,&done,&d_zaut[nstrtl-1],1);
 	}
   }
-  nbatch2 = n;
-  cudaMemcpy(d_As2, h_As2, sizeof(T*)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_Xs2, h_Xs2, sizeof(T*)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_Ys2, h_Ys2, sizeof(T*)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_Ms2, h_Ms2, sizeof(int)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_Ns2, h_Ns2, sizeof(int)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_lddas2, h_lddas2, sizeof(int)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_incxs2, h_incxs2, sizeof(int)*n, cudaMemcpyHostToDevice);
-  cudaMemcpy(d_incys2, h_incys2, sizeof(int)*n, cudaMemcpyHostToDevice);
+  nbatch2a = n;
+  cudaMemcpy(d_As2a, h_As2a, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Xs2a, h_Xs2a, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ys2a, h_Ys2a, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ms2a, h_Ms2a, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ns2a, h_Ns2a, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_lddas2a, h_lddas2a, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_incxs2a, h_incxs2a, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_incys2a, h_incys2a, sizeof(int)*n, cudaMemcpyHostToDevice);
+  // 2b. dense 2
+  n = 0;
+  for(ip=nlf/2; ip<nlf; ip++){
+	ndl    = mat2->ndl[ip];
+	ndt    = mat2->ndt[ip];
+	nstrtl = mat2->nstrtl[ip];
+	nstrtt = mat2->nstrtt[ip];
+	ltmtx  = mat2->ltmtx[ip];
+	if(ltmtx==1){
+	} else if(ltmtx==2){
+	  head = mat2->a1[ip];
+	  h_As2b[n] = &d_sm.rowmat[head];
+	  h_Xs2b[n] = &d_b[nstrtt-1];
+	  h_Ys2b[n] = &d_v[nstrtl-1];
+	  h_Ms2b[n] = ndt;
+	  h_Ns2b[n] = ndl;
+	  h_lddas2b[n] = ndt;
+	  h_incxs2b[n] = 1;
+	  h_incys2b[n] = 1;
+	  n++;
+	  //cublasDgemv(handle,CUBLAS_OP_T, ndt,ndl, &done, &d_sm.rowmat[head], ndt,&d_zu[nstrtt-1],1,&done,&d_zaut[nstrtl-1],1);
+	}
+  }
+  nbatch2b = n;
+  cudaMemcpy(d_As2b, h_As2b, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Xs2b, h_Xs2b, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ys2b, h_Ys2b, sizeof(T*)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ms2b, h_Ms2b, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_Ns2b, h_Ns2b, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_lddas2b, h_lddas2b, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_incxs2b, h_incxs2b, sizeof(int)*n, cudaMemcpyHostToDevice);
+  cudaMemcpy(d_incys2b, h_incys2b, sizeof(int)*n, cudaMemcpyHostToDevice);
 
   /*
 	magma batched blas
@@ -506,24 +605,26 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   {
 	const char *names[]={"default","nocheck"};
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"magma_batched_%d_%s_%s", kernel, names[kernel], typeid(T).name());
+	snprintf(name,0xff,"magma_batched2_%d_%s_%s", kernel, names[kernel], typeid(T).name());
 	snprintf(fname,0xff,"result_%s.txt", name);
 	printf("fname = %s\n", fname);
 
 	// EXEC
-	hmvm_magma_batched_proxy<T>
+	hmvm_magma_batched2_proxy<T>
 	  (
 	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
 	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+	   nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+	   nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
 	   queue, kernel,
 	   d_v, nd, fname, 0);
 	// BENCH
-	hmvm_magma_batched_proxy<T>
+	hmvm_magma_batched2_proxy<T>
 	  (
 	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
 	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+	   nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+	   nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
 	   queue, kernel,
 	   d_v, nd, fname, 5);
   }
@@ -534,8 +635,10 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   cudaFree(d_lddas1a); cudaFree(d_incxs1a); cudaFree(d_incys1a);
   cudaFree(d_As1b); cudaFree(d_Xs1b); cudaFree(d_Ys1b); cudaFree(d_Ms1b); cudaFree(d_Ns1b);
   cudaFree(d_lddas1b); cudaFree(d_incxs1b); cudaFree(d_incys1b);
-  cudaFree(d_As2); cudaFree(d_Xs2); cudaFree(d_Ys2); cudaFree(d_Ms2); cudaFree(d_Ns2);
-  cudaFree(d_lddas2); cudaFree(d_incxs2); cudaFree(d_incys2);
+  cudaFree(d_As2a); cudaFree(d_Xs2a); cudaFree(d_Ys2a); cudaFree(d_Ms2a); cudaFree(d_Ns2a);
+  cudaFree(d_lddas2a); cudaFree(d_incxs2a); cudaFree(d_incys2a);
+  cudaFree(d_As2b); cudaFree(d_Xs2b); cudaFree(d_Ys2b); cudaFree(d_Ms2b); cudaFree(d_Ns2b);
+  cudaFree(d_lddas2b); cudaFree(d_incxs2b); cudaFree(d_incys2a);
   for(ip=0;ip<nlf;ip++)cudaFree(tmpvec[ip]);
   free(tmpvec);
 
@@ -553,12 +656,12 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   cudaFree(d_v);
 
   delete [] v;
-  printf("hmvm_magma_batched: end\n");
+  printf("hmvm_magma_batched2: end\n");
 }
 
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言
 // ######## ######## ######## ######## ######## ######## ######## ########
-template void hmvm_magma_batched<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result);
-template void hmvm_magma_batched<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result);
+template void hmvm_magma_batched2<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result);
+template void hmvm_magma_batched2<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result);

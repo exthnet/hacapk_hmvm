@@ -87,6 +87,8 @@ int main(int argc, char **argv)
   hmvm_magma<double>(matD2, b, 0, dump_result);
   hmvm_magma_batched<double>(matD2, b, 0, dump_result);
   hmvm_magma_batched<double>(matD2, b, 1, dump_result);
+  hmvm_magma_batched2<double>(matD2, b, 0, dump_result);
+  hmvm_magma_batched2<double>(matD2, b, 1, dump_result);
   delete [] b;
 #endif
 
@@ -129,6 +131,8 @@ int main(int argc, char **argv)
   hmvm_magma<float>(matF2, fb, 0, dump_result);
   hmvm_magma_batched<float>(matF2, fb, 0, dump_result);
   hmvm_magma_batched<float>(matF2, fb, 1, dump_result);
+  hmvm_magma_batched2<float>(matF2, fb, 0, dump_result);
+  hmvm_magma_batched2<float>(matF2, fb, 1, dump_result);
   delete [] fb;
 #endif
   delete [] matF2;
