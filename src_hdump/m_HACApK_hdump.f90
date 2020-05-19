@@ -72,7 +72,7 @@ contains
   end subroutine HACApK_info_leafmtx
 
   ! ######## ######## ######## ######## ######## ######## ######## ########
-  ! HACApK_hdump_leafmtx
+  ! HACApK_hdump_dump_leafmtx
   ! write hmatrix to file (hmatrix_1.bin)
   ! ######## ######## ######## ######## ######## ######## ######## ########
   subroutine HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
@@ -202,35 +202,18 @@ contains
     lpmd => st_ctl%lpmd(:); lnp(0:) => st_ctl%lnp; lsp(0:) => st_ctl%lsp; lthr(0:) => st_ctl%lthr
     lod => st_ctl%lod(:); param=>st_ctl%param(:)
     mpinr=lpmd(3); icomm=lpmd(1); nthr=lpmd(20)
-    param(91)=ztol
     if(st_ctl%param(1)>0 .and. mpinr==0) print*,'HACApK_hdump_solve start'
-    nofc=st_bemv%nd
-    nffc=1
-    nd=nofc*nffc
+    nd=st_bemv%nd
     if(st_ctl%param(1)>1) write(*,*) 'irank=',mpinr,' lthr=',lthr(0:nthr-1)
-    allocate(u(nd),b(nd)); u(:nd)=sol(lod(:nd)); b(:nd)=rhs(lod(:nd))
-    if(param(61)==3)then
-       do il=1,nd
-          u(il)=u(il)/st_bemv%ao(lod(il))
-          b(il)=b(il)*st_bemv%ao(lod(il))
-       enddo
-    endif
-    if(param(83)>0) then
-       allocate(ao(nd))
-       do il=1,nd
-          zzz=HACApK_entry_ij(il,il,st_bemv)
-          ao(il)=1.0d0/zzz
-       enddo
-       call MPI_Barrier( icomm, ierr )
-       ! dump info
-       print*,'HACApK_info_leafmtx'
-       call HACApK_info_leafmtx(st_leafmtxp,st_ctl,mpinr)
-       ! dump matrix to files
-       print*,'HACApK_dump_leafmtx'
-       st_leafmtxp%nd = nd
-       call HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
-       call HACApK_hdump_dump_leafmtx2(st_leafmtxp,st_ctl,mpinr)
-    end if
+    call MPI_Barrier( icomm, ierr )
+    ! dump info
+    print*,'HACApK_info_leafmtx'
+    call HACApK_info_leafmtx(st_leafmtxp,st_ctl,mpinr)
+    ! dump matrix to files
+    print*,'HACApK_dump_leafmtx'
+    st_leafmtxp%nd = nd
+    call HACApK_hdump_dump_leafmtx(st_leafmtxp,st_ctl,mpinr)
+    call HACApK_hdump_dump_leafmtx2(st_leafmtxp,st_ctl,mpinr)
   end subroutine HACApK_hdump_solve
 
   ! ######## ######## ######## ######## ######## ######## ######## ########

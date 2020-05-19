@@ -79,7 +79,7 @@ program ppohBEM_bem_bb_dense_mpi
   integer  act_comm
   
 !For HACApK
-  character*32 value
+  character*256 value
   character*32 logfile
   real*8 ztol
 
