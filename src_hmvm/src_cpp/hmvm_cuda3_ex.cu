@@ -74,7 +74,7 @@ __global__ void hmvm_cuda_hybrid3
   int blen  = (32/(32/div));
   int xid   = (threadIdx.x%(32/div));
   int xlen  = (32/div);
-  int ndl, ndt, nstrtl, nstrtt, ltmtx;
+  int ndl, ndt, nstrtl, nstrtt;
   int ip, kt, il, it, itt, itl, ill;
   size_t head;
   T tmp1 = (T)0.0;
@@ -92,10 +92,9 @@ __global__ void hmvm_cuda_hybrid3
 	  ndt = _ndt[ip];
 	  nstrtl = _nstrtl[ip];
 	  nstrtt = _nstrtt[ip];
-	  ltmtx = _ltmtx[ip];
 	  kt = _kt[ip];
 #if _DEBUG_LEVEL >= 3
-	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, _ltmtx[ip]);
 #endif
 	  head = a1[ip];
 	  for(il=bid; il<kt; il+=blen){
@@ -197,9 +196,8 @@ __global__ void hmvm_cuda_hybrid3
 	  ndt = _ndt[ip];
 	  nstrtl = _nstrtl[ip];
 	  nstrtt = _nstrtt[ip];
-	  ltmtx = _ltmtx[ip];
 #if _DEBUG_LEVEL >= 3
-	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, ltmtx);
+	  printf("%d: %d %d %d %d %d\n", ip, ndl, ndt, nstrtl, nstrtt, _ltmtx[ip]);
 #endif
 	  head = a1[ip];
 	  for(il=bid; il<ndl; il+=blen){
@@ -289,7 +287,7 @@ template<class T>
 void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 {
   matrix2<T> d_sm;
-  int i, l, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
+  int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
   T *v=NULL;
   T *d_b, *d_v;
   int ip;

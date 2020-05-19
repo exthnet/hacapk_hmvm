@@ -25,8 +25,6 @@ void  hmvm_magma_calc
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
-  int zero = 0;
-  int one = 1;
   double dzero = 0.0;
   double done = 1.0;
   int head;
@@ -66,8 +64,6 @@ void  hmvm_magma_calc
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
-  int zero = 0;
-  int one = 1;
   double dzero = 0.0;
   double done = 1.0;
   int head;
@@ -167,10 +163,9 @@ template<class T>
 void hmvm_magma(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 {
   matrix2<T> d_sm;
-  int i, l, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
+  int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
   T *v=NULL;
   T *d_b, *d_v;
-  int ip;
   int len;
   cudaError_t ret;
   printf("hmvm_magma_%s: begin\n", typeid(T).name()); fflush(stdout);

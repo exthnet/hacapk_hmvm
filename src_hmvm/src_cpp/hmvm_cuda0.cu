@@ -654,7 +654,7 @@ template<class T>
 void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 {
   matrix2<T> d_sm;
-  int i, l, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
+  int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
   T *v=NULL;
   T *d_b, *d_v;
   int ip;
