@@ -40,13 +40,15 @@ endif
 
 ######################
 # Object files
-OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
+#OBJS1  = loadmatrix.o hmvm1.o hmvm_omp.o hmvm_seq.o
+OBJS1  = loadmatrix.o hmvm1.o hmvm_omp_ex.o hmvm_seq_ex.o
 OBJS2  = loadmatrix.o hmvm2.o hmvm_omp.o hmvm_seq.o
 # C++ default
-#CUOBJS	= hmvm_cuda0.o hmvm_cuda1.o    hmvm_cuda2.o    hmvm_cuda3.o
+#CUOBJS	= hmvm_cuda0.o    hmvm_cuda1.o    hmvm_cuda2.o    hmvm_cuda3.o
+#CUOBJS += hmvm_magma.o hmvm_magma_batched.o hmvm_magma_batched2.o
 # C++ template extension, requires many long make time
-CUOBJS	= hmvm_cuda0.o hmvm_cuda1_ex.o hmvm_cuda2_ex.o hmvm_cuda3_ex.o
-CUOBJS += hmvm_magma.o hmvm_magma_batched.o hmvm_magma_batched2.o
+CUOBJS	= hmvm_cuda0_ex.o hmvm_cuda1_ex.o hmvm_cuda2_ex.o hmvm_cuda3_ex.o
+CUOBJS += hmvm_magma_ex.o hmvm_magma_batched.o hmvm_magma_batched2.o
 HOBJS  = hacapk.h
 
 ######################

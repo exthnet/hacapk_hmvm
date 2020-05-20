@@ -758,597 +758,168 @@ void hmvm_omp_2t_atomic(T *zau, const matrix2<T> *mat, const T *zu)
 
 
 // ######## ######## ######## ########
+// hmvm for mat1
 template<class T>
-void hmvm_omp(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
+void hmvm_omp_proxy1(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench,
+					 void (*fn)(T *, const matrix<T> *, const T *), const char *subname)
 {
-  int i, nd;
+  int M=5, L, lmax;
+  int i, l, nd;
+  double d1, d2, *dtimes, dmin, dmax, davg;
   char fname[0xff];
   FILE *F;
   T *v=NULL;
   printf("hmvm_omp_%s: begin\n", typeid(T).name());
   if(mat!=NULL)nd=mat->nd;else nd=mat2->nd;
   v=(T*)malloc(sizeof(T)*nd);
+  L = M + nbench;
+  dtimes = new double[L];
+  if(nbench==0){lmax=1;}else{lmax=L;}
 
-  // 1
   // hmvm
-  if(mat!=NULL){
-	printf("hmvm_omp_1\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1<T,0>(v, mat, b);
+  {
+	printf("hmvm_%s\n", subname);
+	for(l=0;l<lmax;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  fn(v, mat, b); // hmvm kernel
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
 	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1_%s.txt", typeid(T).name());
+	  snprintf(fname, 0xff, "result_%s_%s.txt", subname, typeid(T).name());
 	  F = fopen(fname, "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
+	}else{
+	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	  for(i=M;i<L;i++){
+		davg += dtimes[i];
+		if(dmin>dtimes[i])dmin=dtimes[i];
+		if(dmax<dtimes[i])dmax=dtimes[i];
+	  }
+	  davg /= (L-M);
+	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
 	}
   }
-
-  // hmvm (loop intechanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1i\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1t<T,1>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1i_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm (trans)
-  if(mat!=NULL){
-	printf("hmvm_omp_1t\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1t<T,0>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1t_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm (trans, loop intechanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1ti\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1t<T,1>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1ti_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // 1 + atomic
-  // hmvm
-  if(mat!=NULL){
-	printf("hmvm_omp_1_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1_atomic<T,0>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm (loop intechanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1i_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1_atomic<T,1>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1i_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm (trans)
-  if(mat!=NULL){
-	printf("hmvm_omp_1t_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1t_atomic<T,0>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1t_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm (trans, loop intechanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1ti_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_1t_atomic<T,1>(v, mat, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_1ti_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-
-  // 2
-  // hmvm using rowmat array
-  if(mat2!=NULL){
-	printf("hmvm_omp_2\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2<T,0>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2i\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2<T,1>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2i_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (trans)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2t\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2t<T,0>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2t_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (trans, loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2ti\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2t<T,1>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2ti_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // 2 + atomic
-  // hmvm using rowmat array
-  if(mat2!=NULL){
-	printf("hmvm_omp_2_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2_atomic<T,0>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2i_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2_atomic<T,1>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2i_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (trans)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2t_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2t_atomic<T,0>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2t_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-  // hmvm using rowmat array (trans, loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2ti_atomic\n");
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	hmvm_omp_2t_atomic<T,1>(v, mat2, b);
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_omp_2ti_atomic_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}
-  }
-
-
   free(v);
+}
 
-  printf("hmvm_omp_%s: end\n", typeid(T).name());
+// hmvm for mat2
+template<class T>
+void hmvm_omp_proxy2(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench,
+					 void (*fn)(T *, const matrix2<T> *, const T *), const char *subname)
+{
+  int M=5, L, lmax;
+  int i, l, nd;
+  double d1, d2, *dtimes, dmin, dmax, davg;
+  char fname[0xff];
+  FILE *F;
+  T *v=NULL;
+  printf("hmvm_omp_%s: begin\n", typeid(T).name());
+  if(mat!=NULL)nd=mat->nd;else nd=mat2->nd;
+  v=(T*)malloc(sizeof(T)*nd);
+  L = M + nbench;
+  dtimes = new double[L];
+  if(nbench==0){lmax=1;}else{lmax=L;}
+
+  // hmvm
+  {
+	printf("hmvm_%s\n", subname);
+	for(l=0;l<lmax;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  fn(v, mat2, b); // hmvm kernel
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_%s_%s.txt", subname, typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}else{
+	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	  for(i=M;i<L;i++){
+		davg += dtimes[i];
+		if(dmin>dtimes[i])dmin=dtimes[i];
+		if(dmax<dtimes[i])dmax=dtimes[i];
+	  }
+	  davg /= (L-M);
+	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
+	}
+  }
+  free(v);
 }
 
 // ######## ######## ######## ########
 template<class T>
-void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int nbench)
+void hmvm_omp_proxy(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
 {
-  const int L=10;
-  int i, l, nd;
-  double d1, d2, dtimes[L], dmin, dmax, davg;
-  T *v=NULL;
-  printf("hmvm_omp_%s_bench: begin\n", typeid(T).name());
-  if(mat!=NULL)nd=mat->nd;else nd=mat2->nd;
-  v=(T*)malloc(sizeof(T)*nd);
-
-  // 1
+  // mat1
   // hmvm
-  if(mat!=NULL){
-	printf("hmvm_omp_1\n");
-	for(l=0;l<L;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1<T,0>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1 min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1<T,0>, "omp_1");  }
 
   // hmvm (loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1i\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1i min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1<T,1>, "omp_1i");  }
 
   // hmvm (trans)
-  if(mat!=NULL){
-	printf("hmvm_omp_1t\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1t<T,0>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1t min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1t<T,0>, "omp_1t");  }
 
   // hmvm (trans, loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1ti\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1t<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1ti min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1t<T,1>, "omp_1ti");  }
 
-  // 1 + atomic
+  // mat1 + atomic
   // hmvm
-  if(mat!=NULL){
-	printf("hmvm_omp_1_atomic\n");
-	for(l=0;l<L;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1_atomic<T,0>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1_atomic<T,0>, "omp_1_atomic");  }
 
   // hmvm (loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1i_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1_atomic<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1i_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1_atomic<T,1>, "omp_1i_atomic");  }
 
   // hmvm (trans)
-  if(mat!=NULL){
-	printf("hmvm_omp_1t_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1t_atomic<T,0>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1t_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1t_atomic<T,0>, "omp_1t_atomic");  }
 
   // hmvm (trans, loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_omp_1ti_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_1t_atomic<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1ti_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat!=NULL){	hmvm_omp_proxy1(mat, mat2, b, 1, 0, &hmvm_omp_1t_atomic<T,1>, "omp_1ti_atomic");  }
 
-
-  // 2
-  // hmvm using rowmat array (loop tranposed)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2 min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  // mat2
+  // hmvm using rowmat array
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2<T,0>, "omp_2");  }
 
   // hmvm using rowmat array (loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2i\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2i min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2<T,1>, "omp_2i");  }
 
   // hmvm using rowmat array (trans)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2t\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2t<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2t min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2t<T,0>, "omp_2t");  }
 
   // hmvm using rowmat array (trans, loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2ti\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2t<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2ti min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2t<T,1>, "omp_2ti");  }
 
-  // 2 + atomic
-  // hmvm using rowmat array (loop tranposed)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2_atomic<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  // mat2 + atomic
+  // hmvm using rowmat array
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2_atomic<T,0>, "omp_2_atomic");  }
 
   // hmvm using rowmat array (loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2i_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2_atomic<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2i_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2_atomic<T,1>, "omp_2i_atomic");  }
 
   // hmvm using rowmat array (trans)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2t_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2t_atomic<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2t_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2t_atomic<T,0>, "omp_2t_atomic");  }
 
   // hmvm using rowmat array (trans, loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_omp_2ti_atomic\n");
-	for(l=0;l<L;l++){
-	for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_omp_2t_atomic<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	dmin = 9999.99;
-	dmax = 0.0;
-	davg = 0.0;
-	for(i=5;i<L;i++){
-	  davg += dtimes[i];
-	  if(dmin>dtimes[i])dmin=dtimes[i];
-	  if(dmax<dtimes[i])dmax=dtimes[i];
-	}
-	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2ti_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
-  }
+  if(mat2!=NULL){	hmvm_omp_proxy2(mat, mat2, b, 1, 0, &hmvm_omp_2t_atomic<T,1>, "omp_2ti_atomic");  }
+}
 
-  free(v);
-
-  printf("hmvm_omp_%s_bench: end\n", typeid(T).name());
+// ######## ######## ######## ########
+template<class T>
+void hmvm_omp(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
+{
+  printf("hmvm_omp_%s: begin\n", typeid(T).name());
+  if(dump_result)hmvm_omp_proxy(mat, mat2, b, 1, 0);
+  if(nbench>0)hmvm_omp_proxy(mat, mat2, b, 0, nbench);
+  printf("hmvm_omp_%s: end\n", typeid(T).name());
 }
 
 
 // ######## ######## ######## ########
 template void hmvm_omp<float> (const matrix<float>  *mat, const matrix2<float>  *mat2, const float  *b, int dump_result, int nbench);
 template void hmvm_omp<double>(const matrix<double> *mat, const matrix2<double> *mat2, const double *b, int dump_result, int nbench);
-template void hmvm_omp_bench<float> (const matrix<float>  *mat, const matrix2<float>  *mat2, const float  *b, int nbench);
-template void hmvm_omp_bench<double>(const matrix<double> *mat, const matrix2<double> *mat2, const double *b, int nbench);

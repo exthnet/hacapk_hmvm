@@ -183,13 +183,10 @@ __global__ void hmvm_cuda_seq
 
 template <class T, int a2t, int a2i>
 void hmvm_cuda_seq_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- T *v, T *b, int nd, char *fname, int bench)
+(T *d_zaut, T *d_zu,
+ matrix2<T> *h_mat, matrix2<T> *d_mat,
+ T *v, T *b, char *fname, int bench)
 {
-#if 1
   int M=5, L=M+bench;
   FILE *F;
   int i, l, lmax;
@@ -198,25 +195,25 @@ void hmvm_cuda_seq_proxy
   dtimes = new double[L];
   if(bench==0){lmax=1;}else{lmax=L;}
   for(l=0;l<lmax;l++){
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	for(i=0;i<h_mat->nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
 	cudaDeviceSynchronize();
 	d1 = omp_get_wtime();
-	hmvm_cuda_seq<T,a2t,a2i><<<1,1,sizeof(T)*ktmax>>>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   ltmtx, ndt, ndl, nstrtl, nstrtt, kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense);
+	hmvm_cuda_seq<T,a2t,a2i><<<1,1,sizeof(T)*h_mat->ktmax>>>
+	  (d_zaut, d_zu, d_mat->nlf, d_mat->ktmax,
+	   d_mat->ltmtx, d_mat->ndt, d_mat->ndl, d_mat->nstrtl, d_mat->nstrtt,
+	   d_mat->kt, d_mat->a1, d_mat->a2, d_mat->rowmat, d_mat->rowmat_t,
+	   d_mat->napprox, d_mat->approx, d_mat->ndense, d_mat->dense);
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();
 	dtimes[l] = d2-d1;
   }
   if(bench==0){
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*h_mat->nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
 	printf("write to %s\n", fname);
 	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	for(i=0;i<h_mat->nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }else{
 	dmin = 9999.99;
@@ -231,122 +228,20 @@ void hmvm_cuda_seq_proxy
 	printf("TIME %d hmvm_cuda0_seq%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
-#endif
 }
 
 template <class T>
 void hmvm_cuda_seq_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- T *v, T *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_seq_proxy<T,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_seq_proxy<T,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_seq_proxy<T,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_seq_proxy<T,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
+(T *d_zaut, T *d_zu,
+ matrix2<T> *h_mat, matrix2<T> *d_mat,
+ T *v, T *b, char *fname, int bench,
+ int a2t, int a2i)
+{
+  if(a2t==0 && a2i==0)hmvm_cuda_seq_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==0 && a2i==1)hmvm_cuda_seq_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==1 && a2i==0)hmvm_cuda_seq_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==1 && a2i==1)hmvm_cuda_seq_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
 }
-
-#if 0
-void hmvm_cuda_seq_proxy
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, float *rowmat, float *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- float *v, float *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_seq_proxy<float,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_seq_proxy<float,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_seq_proxy<float,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_seq_proxy<float,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-}
-void hmvm_cuda_seq_proxy
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, double *rowmat, double *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- double *v, double *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_seq_proxy<double,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_seq_proxy<double,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_seq_proxy<double,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_seq_proxy<double,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt, _kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-}
-#endif
-// ######## ######## ######## ######## ######## ######## ######## ########
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 /*
@@ -487,11 +382,9 @@ __global__ void hmvm_cuda_block
 
 template <class T, int a2t, int a2i>
 void hmvm_cuda_block_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- T *v, T *b, int nd, char *fname, int bench)
+(T *d_zaut, T *d_zu,
+ matrix2<T> *h_mat, matrix2<T> *d_mat,
+ T *v, T *b, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -501,25 +394,25 @@ void hmvm_cuda_block_proxy
   dtimes = new double[L];
   if(bench==0){lmax=1;}else{lmax=L;}
   for(l=0;l<lmax;l++){
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	for(i=0;i<h_mat->nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
 	cudaDeviceSynchronize();
 	d1 = omp_get_wtime();
-	hmvm_cuda_block<T,a2t,a2i><<<napprox+ndense,1,sizeof(T)*ktmax>>>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   ltmtx, ndt, ndl, nstrtl, nstrtt,
-	   kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense);
+	hmvm_cuda_block<T,a2t,a2i><<<h_mat->napprox+h_mat->ndense,1,sizeof(T)*h_mat->ktmax>>>
+	  (d_zaut, d_zu, d_mat->nlf, d_mat->ktmax,
+	   d_mat->ltmtx, d_mat->ndt, d_mat->ndl, d_mat->nstrtl, d_mat->nstrtt,
+	   d_mat->kt, d_mat->a1, d_mat->a2, d_mat->rowmat, d_mat->rowmat_t,
+	   d_mat->napprox, d_mat->approx, d_mat->ndense, d_mat->dense);
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();
 	dtimes[l] = d2-d1;
   }
   if(bench==0){
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*h_mat->nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
 	printf("write to %s\n", fname);
 	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	for(i=0;i<h_mat->nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }else{
 	dmin = 9999.99;
@@ -538,118 +431,18 @@ void hmvm_cuda_block_proxy
 
 template <class T>
 void hmvm_cuda_block_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- T *v, T *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_block_proxy<T,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_block_proxy<T,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_block_proxy<T,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_block_proxy<T,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
+(T *d_zaut, T *d_zu,
+ matrix2<T> *h_mat, matrix2<T> *d_mat,
+ T *v, T *b, char *fname, int bench,
+ int a2t, int a2i)
+{
+  if(a2t==0 && a2i==0)hmvm_cuda_block_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==0 && a2i==1)hmvm_cuda_block_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==1 && a2i==0)hmvm_cuda_block_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==1 && a2i==1)hmvm_cuda_block_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
 }
 
-#if 0
-void hmvm_cuda_block_proxy
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, float *rowmat, float *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- float *v, float *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_block_proxy<float,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_block_proxy<float,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_block_proxy<float,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_block_proxy<float,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-}
-void hmvm_cuda_block_proxy
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, double *rowmat, double *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- double *v, double *b, int nd, char *fname, int bench,
- int a2t, int a2i){
-  if(a2t==0 && a2i==0)
-	hmvm_cuda_block_proxy<double,0,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==0 && a2i==1)
-	hmvm_cuda_block_proxy<double,0,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==0)
-	hmvm_cuda_block_proxy<double,1,0>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-  if(a2t==1 && a2i==1)
-	hmvm_cuda_block_proxy<double,1,1>
-	  (d_zaut, d_zu, nlf, ktmax,
-	   _ltmtx, _ndt, _ndl, _nstrtl, _nstrtt,
-	   _kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense,
-	   v, b, nd, fname, bench);
-}
-#endif
 // ######## ######## ######## ######## ######## ######## ######## ########
-
 template<class T>
 void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 {
@@ -735,21 +528,9 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_seq_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 0,
-	   a2t, a2i);
+	if(dump_result)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, 0, a2t, a2i);
 	// BENCH
-	hmvm_cuda_seq_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
-	   a2t, a2i);
+	if(nbench>0)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, nbench, a2t, a2i);
   }
 
   /*
@@ -770,21 +551,9 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_block_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 0,
-	   a2t, a2i);
+	if(dump_result)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, 0, a2t, a2i);
 	// BENCH
-	hmvm_cuda_block_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
-	   a2t, a2i);
+	if(nbench>0)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, nbench, a2t, a2i);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########
@@ -804,7 +573,6 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
   delete [] v;
   printf("hmvm_cuda0: end\n");
 }
-
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言

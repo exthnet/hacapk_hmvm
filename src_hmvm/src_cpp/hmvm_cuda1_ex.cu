@@ -225,12 +225,10 @@ __global__ void hmvm_cuda_hybrid1
 
 template <class T, int div, int a2t, int a2i, int aa, int da>
 void hmvm_cuda_hybrid1_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
+(T *d_zaut, T *d_zu,
+ matrix2<T> *h_mat, matrix2<T> *d_mat,
  int blocks, int threads, int shms,
- T *v, T *b, int nd, char *fname, int bench)
+ T *v, T *b, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -240,24 +238,24 @@ void hmvm_cuda_hybrid1_proxy
   dtimes = new double[L];
   if(bench==0){lmax=1;}else{lmax=L;}
   for(l=0;l<lmax;l++){
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	for(i=0;i<h_mat->nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
 	cudaDeviceSynchronize();
 	d1 = omp_get_wtime();
 	hmvm_cuda_hybrid1<T,div,a2t,a2i,aa,da><<<blocks,threads,shms>>>
-	  (d_zaut, d_zu, nlf, ktmax, ltmtx,
-	   ndt, ndl, nstrtl, nstrtt, kt, a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense);
+	  (d_zaut, d_zu, d_mat->nlf, d_mat->ktmax, d_mat->ltmtx,
+	   d_mat->ndt, d_mat->ndl, d_mat->nstrtl, d_mat->nstrtt, d_mat->kt, d_mat->a1, d_mat->a2, d_mat->rowmat, d_mat->rowmat_t,
+	   d_mat->napprox, d_mat->approx, d_mat->ndense, d_mat->dense);
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();
 	dtimes[l] = d2-d1;
   }
   if(bench==0){
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*h_mat->nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
 	printf("write to %s\n", fname);
 	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	for(i=0;i<h_mat->nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }else{
 	dmin = 9999.99;
@@ -277,7 +275,7 @@ void hmvm_cuda_hybrid1_proxy
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>
-void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
+void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 {
   matrix2<T> d_sm;
   int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
@@ -363,8 +361,8 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   何故かdivが8or16の時にa2i=1,aa=1の結果がおかしい
   div8は誤差の範囲かも知れない、div16はよりおかしい
 */
-  if(kernel>=1000&&kernel<1096){
-	int subkernel = kernel-1000;
+  if(kernel>=0&&kernel<96){
+	int subkernel = kernel;
 	int div, a2t, a2i, aa, da;
 	div = subkernel%6;
 	a2t = (subkernel/6)%2;
@@ -377,23 +375,15 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	snprintf(fname,0xff,"result_cuda1_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_hybrid1_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-	   v, b, nd, fname, 0,
-	   div, a2t, a2i, aa, da);
+	if(dump_result)
+	  hmvm_cuda_hybrid1_proxy<T>
+		(d_v, d_b, mat2, &d_sm, d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
+		 v, b, name, 0, div, a2t, a2i, aa, da);
 	// BENCH
-	hmvm_cuda_hybrid1_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-	   v, b, nd, fname, 5,
-	   div, a2t, a2i, aa, da);
+	if(nbench>0)
+	  hmvm_cuda_hybrid1_proxy<T>
+		(d_v, d_b, mat2, &d_sm, d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
+		 v, b, fname, nbench, div, a2t, a2i, aa, da);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########
@@ -418,5 +408,5 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言
 // ######## ######## ######## ######## ######## ######## ######## ########
-template void hmvm_cuda1<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result);
-template void hmvm_cuda1<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result);
+template void hmvm_cuda1<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result, int nbench);
+template void hmvm_cuda1<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result, int nbench);

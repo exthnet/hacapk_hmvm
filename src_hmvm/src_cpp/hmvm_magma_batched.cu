@@ -244,7 +244,7 @@ void hmvm_magma_batched_proxy
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>
-void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
+void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 {
   matrix2<T> d_sm;
   int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
@@ -560,5 +560,5 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言
 // ######## ######## ######## ######## ######## ######## ######## ########
-template void hmvm_magma_batched<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result);
-template void hmvm_magma_batched<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result);
+template void hmvm_magma_batched<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result, int nbench);
+template void hmvm_magma_batched<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result, int nbench);

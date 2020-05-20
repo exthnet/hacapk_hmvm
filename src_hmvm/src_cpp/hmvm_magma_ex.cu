@@ -17,11 +17,7 @@
  */
 
 void  hmvm_magma_calc
-(double *d_zaut, double *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, double *rowmat, double *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- double *d_zbut, matrix2<double> *mat)
+(double *d_zaut, double *d_zu, matrix2<double> *d_mat, double *d_zbut)
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
@@ -32,22 +28,22 @@ void  hmvm_magma_calc
   magma_queue_t queue;
   magma_queue_create(dev, &queue);
 
-  for(ip=0; ip<nlf; ip++){
-    ndl    = _ndl[ip];
-    ndt    = _ndt[ip];
-    nstrtl = _nstrtl[ip];
-    nstrtt = _nstrtt[ip];
-    ltmtx  = _ltmtx[ip];
+  for(ip=0; ip<d_mat->nlf; ip++){
+    ndl    = d_mat->ndl[ip];
+    ndt    = d_mat->ndt[ip];
+    nstrtl = d_mat->nstrtl[ip];
+    nstrtt = d_mat->nstrtt[ip];
+    ltmtx  = d_mat->ltmtx[ip];
     if(ltmtx==1){
-      kt = _kt[ip];
+      kt = d_mat->kt[ip];
 	  //cudaMemcpy(&d_zbut, &h_zero, sizeof(double)*kt, cudaMemcpyHostToDevice);
-	  head = a1[ip];
-	  magma_dgemv(MagmaTrans, ndt,kt, done, &rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
-	  head = a2[ip];
-	  magma_dgemv(MagmaNoTrans, ndl,kt, done, &rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
+	  head = d_mat->a1[ip];
+	  magma_dgemv(MagmaTrans, ndt,kt, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
+	  head = d_mat->a2[ip];
+	  magma_dgemv(MagmaNoTrans, ndl,kt, done, &d_mat->rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
     } else if(ltmtx==2){
-	  head = a1[ip];
-	  magma_dgemv(MagmaTrans, ndt,ndl, done, &rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
+	  head = d_mat->a1[ip];
+	  magma_dgemv(MagmaTrans, ndt,ndl, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
     }
   }
   //magma_daxpy(nd,done,d_zaut,1,d_zau,1, queue);
@@ -56,11 +52,7 @@ void  hmvm_magma_calc
 }
 
 void  hmvm_magma_calc
-(float *d_zaut, float *d_zu, int nlf, int ktmax,
- int *_ltmtx, int *_ndt, int *_ndl, int *_nstrtl, int *_nstrtt, int *_kt,
- int *a1, int *a2, float *rowmat, float *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- float *d_zbut, matrix2<float> *mat)
+(float *d_zaut, float *d_zu, matrix2<float> *d_mat, float *d_zbut)
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
@@ -71,22 +63,22 @@ void  hmvm_magma_calc
   magma_queue_t queue;
   magma_queue_create(dev, &queue);
 
-  for(ip=0; ip<nlf; ip++){
-    ndl    = _ndl[ip];
-    ndt    = _ndt[ip];
-    nstrtl = _nstrtl[ip];
-    nstrtt = _nstrtt[ip];
-    ltmtx  = _ltmtx[ip];
+  for(ip=0; ip<d_mat->nlf; ip++){
+    ndl    = d_mat->ndl[ip];
+    ndt    = d_mat->ndt[ip];
+    nstrtl = d_mat->nstrtl[ip];
+    nstrtt = d_mat->nstrtt[ip];
+    ltmtx  = d_mat->ltmtx[ip];
     if(ltmtx==1){
-      kt = _kt[ip];
+      kt = d_mat->kt[ip];
 	  //cudaMemcpy(&d_zbut, &h_zero, sizeof(double)*kt, cudaMemcpyHostToDevice);
-	  head = a1[ip];
-	  magma_sgemv(MagmaTrans, ndt,kt, done, &rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
-	  head = a2[ip];
-	  magma_sgemv(MagmaNoTrans, ndl,kt, done, &rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
+	  head = d_mat->a1[ip];
+	  magma_sgemv(MagmaTrans, ndt,kt, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
+	  head = d_mat->a2[ip];
+	  magma_sgemv(MagmaNoTrans, ndl,kt, done, &d_mat->rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
     } else if(ltmtx==2){
-	  head = a1[ip];
-	  magma_sgemv(MagmaTrans, ndt,ndl, done, &rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
+	  head = d_mat->a1[ip];
+	  magma_sgemv(MagmaTrans, ndt,ndl, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
     }
   }
   //magma_daxpy(nd,done,d_zaut,1,d_zau,1, queue);
@@ -96,48 +88,40 @@ void  hmvm_magma_calc
 
 template <class T>
 void hmvm_magma_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
- T *v, T *b, int nd, char *fname, int bench,
- matrix2<T> *mat2)
+(T *d_zaut, T *d_zu, matrix2<T> *h_mat, matrix2<T> *d_mat,
+ T *v, T *b, char *fname, int bench)
 {
-#if 1
   int M=5, L=M+bench;
   FILE *F;
   int i, l, lmax;
   double d1, d2, *dtimes, dmin, dmax, davg;
   cudaError_t ret;
   T *d_tmp, *h_zero;
-  cudaMalloc((void**)&d_tmp, sizeof(T)*mat2->ktmax);
-  h_zero = new T[mat2->ktmax];
-  for(i=0; i<mat2->ktmax; i++)h_zero[i]=(T)0.0;
-  cudaMemcpy(d_tmp, h_zero, sizeof(T)*mat2->ktmax, cudaMemcpyHostToDevice);
+  cudaMalloc((void**)&d_tmp, sizeof(T)*h_mat->ktmax);
+  h_zero = new T[h_mat->ktmax];
+  for(i=0; i<h_mat->ktmax; i++)h_zero[i]=(T)0.0;
+  cudaMemcpy(d_tmp, h_zero, sizeof(T)*h_mat->ktmax, cudaMemcpyHostToDevice);
   dtimes = new double[L];
   if(bench==0){lmax=1;}else{lmax=L;}
   for(l=0;l<lmax;l++){
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	//CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	for(i=0;i<h_mat->nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
 	cudaDeviceSynchronize();
 	d1 = omp_get_wtime();
 
 	hmvm_magma_calc
-	  (d_zaut, d_zu, nlf, ktmax,
-	   ltmtx, ndt, ndl, nstrtl, nstrtt, kt,
-	   a1, a2, rowmat, rowmat_t,
-	   napprox, approx, ndense, dense, d_tmp, mat2);
+	  (d_zaut, d_zu, d_mat, d_tmp);
 
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();
 	dtimes[l] = d2-d1;
   }
   if(bench==0){
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*h_mat->nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
 	printf("write to %s\n", fname);
 	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	for(i=0;i<h_mat->nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }else{
 	dmin = 9999.99;
@@ -152,7 +136,6 @@ void hmvm_magma_proxy
 	printf("TIME %d hmvm_magma%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
-#endif
 }
 
 // ######## ######## ######## ######## ######## ######## ######## ########
@@ -238,21 +221,13 @@ void hmvm_magma(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_magma_proxy<T>
-	  (d_v, d_b, mat2->nlf, mat2->ktmax,
-	   mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
-	   mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 0,
-	   mat2);
+	if(dump_result)
+	  hmvm_magma_proxy<T>
+		(d_v, d_b, mat2, &d_sm, v, b, fname, 0);
 	// BENCH
-	hmvm_magma_proxy<T>
-	  (d_v, d_b, mat2->nlf, mat2->ktmax,
-	   mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
-	   mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
-	   mat2);
+	if(nbench>0)
+	  hmvm_magma_proxy<T>
+		(d_v, d_b, mat2, &d_sm, v, b, fname, nbench);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########

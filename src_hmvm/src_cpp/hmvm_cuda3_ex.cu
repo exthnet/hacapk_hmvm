@@ -98,7 +98,7 @@ __global__ void hmvm_cuda_hybrid3
 #endif
 	  head = a1[ip];
 	  for(il=bid; il<kt; il+=blen){
-  	    if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = 0.0;
+  	    if(xid==0)tmp2[(threadIdx.x/32)*ktmax+il] = (T)0.0;
 		tmp1 = (T)0.0;
 		for(it=xid; it<ndt; it+=xlen){
 	      itt=it+nstrtt-1;
@@ -137,13 +137,13 @@ __global__ void hmvm_cuda_hybrid3
 				myAtomicAdd(&d_zaut[ill], tmp1);
 			  }
 			}
-		  }else{ // atomic==1
+		  }else{ // aatomic==1
 			for(it=bid; it<ndl; it+=blen){
 			  ill=it+nstrtl-1;
 			  tmp1 = (T)0.0;
 			  for(il=xid; il<kt; il+=xlen){
 				itl=it+il*ndl;
-				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+				tmp1 += rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
 			  }
 			  myAtomicAdd(&d_zaut[ill], tmp1);
 			}
@@ -154,18 +154,18 @@ __global__ void hmvm_cuda_hybrid3
 		  for(il=bid; il<kt; il+=blen){
 			for(it=xid; it<ndl; it+=xlen){
 			  ill=it+nstrtl-1;
-			  itl=it+il*ndl;
-			  myAtomicAdd(&d_zaut[ill], rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
+			  itl=it*kt+il;
+			  myAtomicAdd(&d_zaut[ill], rowmat_t[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il]);
 			}
 		  }
 		}else{ // a2i==1
 		  if(aatomic==0){ // aatomic==0
-			for(it=bid; it<kt; it+=blen){
+			for(it=bid; it<ndl; it+=blen){
 			  ill=it+nstrtl-1;
 			  tmp1 = (T)0.0;
-			  for(il=xid; il<ndl; il+=xlen){
-				itl=it+il*ndl;
-				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  for(il=xid; il<kt; il+=xlen){
+				itl=it*kt+il;
+				tmp1 += rowmat_t[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
 			  }
 			  for (int offset = g.size()/2; offset > 0; offset /= 2)tmp1 += g.shfl_down(tmp1, offset);
 			  if(xid==0){
@@ -173,12 +173,12 @@ __global__ void hmvm_cuda_hybrid3
 			  }
 			}
 		  }else{ // atomic==1
-			for(it=bid; it<kt; it+=blen){
+			for(it=bid; it<ndl; it+=blen){
 			  ill=it+nstrtl-1;
 			  tmp1 = (T)0.0;
-			  for(il=xid; il<ndl; il+=xlen){
-				itl=it+il*ndl;
-				tmp1 =+ rowmat[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
+			  for(il=xid; il<kt; il+=xlen){
+				itl=it*kt+il;
+				tmp1 += rowmat_t[head+itl]*tmp2[(threadIdx.x/32)*ktmax+il];
 			  }
 			  myAtomicAdd(&d_zaut[ill], tmp1);
 			}
@@ -233,12 +233,9 @@ __global__ void hmvm_cuda_hybrid3
 
 template <class T, int div, int mul, int a2t, int a2i, int aa, int da>
 void hmvm_cuda_hybrid3_proxy
-(T *d_zaut, T *d_zu, int nlf, int ktmax,
- int *ltmtx, int *ndt, int *ndl, int *nstrtl, int *nstrtt, int *kt,
- int *a1, int *a2, T *rowmat, T *rowmat_t,
- int napprox, int *approx, int ndense, int *dense,
+(T *d_zaut, T *d_zu, matrix2<T> *h_mat, matrix2<T> *d_mat,
  int blocks, int threads, int shms,
- T *v, T *b, int nd, char *fname, int bench)
+ T *v, T *b, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -248,23 +245,24 @@ void hmvm_cuda_hybrid3_proxy
   dtimes = new double[L];
   if(bench==0){lmax=1;}else{lmax=L;}
   for(l=0;l<lmax;l++){
-	for(i=0;i<nd;i++)v[i] = (T)0.0;
-	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
-	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
+	for(i=0;i<h_mat->nd;i++)v[i] = (T)0.0;
+	CHECK_DO(cudaMemcpy(d_zaut, v, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy v to d_v");
+	CHECK_DO(cudaMemcpy(d_zu, b, sizeof(T)*h_mat->nd, cudaMemcpyHostToDevice),"cudaMemcpy b to d_b");
 	cudaDeviceSynchronize();
 	d1 = omp_get_wtime();
 	hmvm_cuda_hybrid3<T,div,mul,a2t,a2i,aa,da><<<blocks,threads,shms>>>
-	  (d_zaut, d_zu, nlf, ktmax, ltmtx, ndt, ndl, nstrtl, nstrtt, kt,
-	   a1, a2, rowmat, rowmat_t, napprox, approx, ndense, dense);
+	  (d_zaut, d_zu, d_mat->nlf, d_mat->ktmax, d_mat->ltmtx, d_mat->ndt, d_mat->ndl, d_mat->nstrtl, d_mat->nstrtt,
+	   d_mat->kt, d_mat->a1, d_mat->a2, d_mat->rowmat, d_mat->rowmat_t,
+	   d_mat->napprox, d_mat->approx, d_mat->ndense, d_mat->dense);
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();
 	dtimes[l] = d2-d1;
   }
   if(bench==0){
-	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
+	CHECK_DO(cudaMemcpy(v, d_zaut, sizeof(T)*h_mat->nd, cudaMemcpyDeviceToHost),"cudaMemcpy d_v to v");
 	printf("write to %s\n", fname);
 	F = fopen(fname, "w");
-	for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	for(i=0;i<h_mat->nd;i++)fprintf(F, "%.3E\n", v[i]);
 	fclose(F);
   }else{
 	dmin = 9999.99;
@@ -284,7 +282,7 @@ void hmvm_cuda_hybrid3_proxy
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>
-void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result)
+void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 {
   matrix2<T> d_sm;
   int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
@@ -369,8 +367,8 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
 */
-  if((kernel>=20000)&&(kernel<21536)){
-	int subkernel = kernel-20000;
+  if((kernel>=0)&&(kernel<1536)){
+	int subkernel = kernel;
 	int div, mul, a2t, a2i, aa, da;
 	div = subkernel%6;
 	mul = (subkernel/6)%16 + 1;
@@ -384,23 +382,17 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 	snprintf(fname,0xff,"result_cuda3_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_hybrid3_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-	   v, b, nd, fname, 0,
-	   div, mul, a2t, a2i, aa, da);
+	if(dump_result)
+	  hmvm_cuda_hybrid3_proxy<T>
+		(d_v, d_b, mat2, &d_sm,
+		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
+		 v, b, fname, 0, div, mul, a2t, a2i, aa, da);
 	// BENCH
-	hmvm_cuda_hybrid3_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-	   v, b, nd, fname, 5,
-	   div, mul, a2t, a2i, aa, da);
+	if(nbench>0)
+	  hmvm_cuda_hybrid3_proxy<T>
+		(d_v, d_b, mat2, &d_sm,
+		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
+		 v, b, fname, nbench, div, mul, a2t, a2i, aa, da);
   }
 #endif
 
@@ -426,5 +418,5 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result)
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言
 // ######## ######## ######## ######## ######## ######## ######## ########
-template void hmvm_cuda3<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result);
-template void hmvm_cuda3<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result);
+template void hmvm_cuda3<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result, int nbench);
+template void hmvm_cuda3<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result, int nbench);

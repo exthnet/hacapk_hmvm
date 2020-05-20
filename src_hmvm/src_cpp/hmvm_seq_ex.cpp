@@ -304,8 +304,10 @@ void hmvm_seq_2t(T *v, const matrix2<T> *mat, const T *b)
 
 
 // ######## ######## ######## ########
+// hmvm for mat1
 template<class T>
-void hmvm_seq_proxy(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
+void hmvm_seq_proxy1(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench,
+					 void (*fn)(T *, const matrix<T> *, const T *), const char *subname)
 {
   int M=5, L, lmax;
   int i, l, nd;
@@ -321,17 +323,17 @@ void hmvm_seq_proxy(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
   if(nbench==0){lmax=1;}else{lmax=L;}
 
   // hmvm
-  if(mat!=NULL){
-	printf("hmvm_seq_1\n");
+  {
+	printf("hmvm_%s\n", subname);
 	for(l=0;l<lmax;l++){
 	  for(i=0;i<nd;i++)v[i] = 0.0;
 	  d1 = omp_get_wtime();
-	  hmvm_seq_1<T,0>(v, mat, b);
+	  fn(v, mat, b); // hmvm kernel
 	  d2 = omp_get_wtime();
 	  dtimes[l] = d2-d1;
 	}
 	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_1_%s.txt", typeid(T).name());
+	  snprintf(fname, 0xff, "result_%s_%s.txt", subname, typeid(T).name());
 	  F = fopen(fname, "w");
 	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
 	  fclose(F);
@@ -343,210 +345,96 @@ void hmvm_seq_proxy(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 		if(dmax<dtimes[i])dmax=dtimes[i];
 	  }
 	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_1 min %e max %e avg %e\n", L, dmin, dmax, davg);
+	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
 	}
   }
+  free(v);
+}
+
+// hmvm for mat2
+template<class T>
+void hmvm_seq_proxy2(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench,
+					 void (*fn)(T *, const matrix2<T> *, const T *), const char *subname)
+{
+  int M=5, L, lmax;
+  int i, l, nd;
+  double d1, d2, *dtimes, dmin, dmax, davg;
+  char fname[0xff];
+  FILE *F;
+  T *v=NULL;
+  printf("hmvm_seq_%s: begin\n", typeid(T).name());
+  if(mat!=NULL)nd=mat->nd;else nd=mat2->nd;
+  v=(T*)malloc(sizeof(T)*nd);
+  L = M + nbench;
+  dtimes = new double[L];
+  if(nbench==0){lmax=1;}else{lmax=L;}
+
+  // hmvm
+  {
+	printf("hmvm_%s\n", subname);
+	for(l=0;l<lmax;l++){
+	  for(i=0;i<nd;i++)v[i] = 0.0;
+	  d1 = omp_get_wtime();
+	  fn(v, mat2, b); // hmvm_kernel
+	  d2 = omp_get_wtime();
+	  dtimes[l] = d2-d1;
+	}
+	if(dump_result){
+	  snprintf(fname, 0xff, "result_%s_%s.txt", subname, typeid(T).name());
+	  F = fopen(fname, "w");
+	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
+	  fclose(F);
+	}else{
+	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
+	  for(i=M;i<L;i++){
+		davg += dtimes[i];
+		if(dmin>dtimes[i])dmin=dtimes[i];
+		if(dmax<dtimes[i])dmax=dtimes[i];
+	  }
+	  davg /= (L-M);
+	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
+	}
+  }
+  free(v);
+}
+
+// ######## ######## ######## ########
+template<class T>
+void hmvm_seq_proxy(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
+{
+  // hmvm
+  if(mat!=NULL){	hmvm_seq_proxy1(mat, mat2, b, 1, 0, &hmvm_seq_1<T,0>, "seq_1");  }
 
   // hmvm (loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_seq_1i\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_1<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_1i_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_1i min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat!=NULL){	hmvm_seq_proxy1(mat, mat2, b, 1, 0, &hmvm_seq_1<T,1>, "seq_1i");  }
 
   // hmvm (trans)
-  if(mat!=NULL){
-	printf("hmvm_seq_1t\n");
-	for(l=0;l<L;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_1t<T,0>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_1t_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_1t min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat!=NULL){	hmvm_seq_proxy1(mat, mat2, b, 1, 0, &hmvm_seq_1t<T,0>, "seq_1t");  }
 
   // hmvm (trans, loop interchanged)
-  if(mat!=NULL){
-	printf("hmvm_seq_1ti\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_1t<T,1>(v, mat, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_1ti_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_1ti min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat!=NULL){	hmvm_seq_proxy1(mat, mat2, b, 1, 0, &hmvm_seq_1t<T,1>, "seq_1ti");  }
 
   // hmvm using rowmat array
-  if(mat2!=NULL){
-	printf("hmvm_seq_2\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_2<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_2_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_2 min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat2!=NULL){	hmvm_seq_proxy2(mat, mat2, b, 1, 0, &hmvm_seq_2<T,0>, "seq_2");  }
 
   // hmvm using rowmat array (loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_seq_2i\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_2<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_2i_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_2i min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat2!=NULL){	hmvm_seq_proxy2(mat, mat2, b, 1, 0, &hmvm_seq_2<T,1>, "seq_2i");  }
 
   // hmvm using rowmat array (trans)
-  if(mat2!=NULL){
-	printf("hmvm_seq_2t\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_2t<T,0>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_2t_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_2t_min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
+  if(mat2!=NULL){	hmvm_seq_proxy2(mat, mat2, b, 1, 0, &hmvm_seq_2t<T,0>, "seq_2t");  }
 
   // hmvm using rowmat array (trans, loop interchanged)
-  if(mat2!=NULL){
-	printf("hmvm_seq_2ti\n");
-	for(l=0;l<lmax;l++){
-	  for(i=0;i<nd;i++)v[i] = 0.0;
-	  d1 = omp_get_wtime();
-	  hmvm_seq_2t<T,1>(v, mat2, b);
-	  d2 = omp_get_wtime();
-	  dtimes[l] = d2-d1;
-	}
-	if(dump_result){
-	  snprintf(fname, 0xff, "result_seq_2ti_%s.txt", typeid(T).name());
-	  F = fopen(fname, "w");
-	  for(i=0;i<nd;i++)fprintf(F, "%.3E\n", v[i]);
-	  fclose(F);
-	}else{
-	  dmin = 9999.99;	dmax = 0.0;	davg = 0.0;
-	  for(i=M;i<L;i++){
-		davg += dtimes[i];
-		if(dmin>dtimes[i])dmin=dtimes[i];
-		if(dmax<dtimes[i])dmax=dtimes[i];
-	  }
-	  davg /= (L-M);
-	  printf("TIME %d hmvm_seq_2ti min %e max %e avg %e\n", L, dmin, dmax, davg);
-	}
-  }
-
-  free(v);
-
-  printf("hmvm_seq_%s: end\n", typeid(T).name());
+  if(mat2!=NULL){	hmvm_seq_proxy2(mat, mat2, b, 1, 0, &hmvm_seq_2t<T,1>, "seq_2ti");  }
 }
 
 // ######## ######## ######## ########
 template<class T>
 void hmvm_seq(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, int dump_result, int nbench)
 {
+  printf("hmvm_seq_%s: begin\n", typeid(T).name());
   if(dump_result)hmvm_seq_proxy(mat, mat2, b, 1, 0);
   if(nbench>0)hmvm_seq_proxy(mat, mat2, b, 0, nbench);
+  printf("hmvm_seq_%s: end\n", typeid(T).name());
 }
 
 // ######## ######## ######## ########
