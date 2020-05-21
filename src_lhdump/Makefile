@@ -54,7 +54,7 @@ LINK=$(F90)
 
 OBJS= HACApK_lib.o m_ppohBEM_user_func.o m_ppohBEM_matrix_element_ij.o m_HACApK_calc_entry_ij.o \
 	m_HACApK_base.o m_HACApK_solve.o m_HACApK_use.o m_ppohBEM_bembb2hacapk.o bem-bb-fw-HACApK-0.100.4.o \
-#	m_HACApK_lhdump.o
+	m_HACApK_lhdump.o
 
 TARGET=bem-bb-SCM.out
 

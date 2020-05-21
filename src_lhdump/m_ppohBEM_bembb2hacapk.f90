@@ -38,7 +38,7 @@
 !=====================================================================*
 module m_ppohBEM_bembb2hacapk
  use m_HACApK_use
-!  use m_HACApK_lhdump
+ use m_HACApK_lhdump
  implicit real*8(a-h,o-z)
 contains
 
@@ -113,7 +113,7 @@ contains
   write(*,*)"DEBUG: hacapk_gensolv"
   bembb2hacapk= hacapk_gensolv(st_leafmtxp,st_bemv,st_ctl,zgmid,rhs,sol,ztol)
   ! dump LH matrix
-  !call hacapk_lhdump(st_leafmtxp,st_bemv,st_ctl,zgmid,rhs,sol,ztol)
+  call hacapk_lhdump(st_leafmtxp,st_bemv,st_ctl,zgmid,rhs,sol,ztol)
   lrtrn=HACApK_free_leafmtxp(st_leafmtxp)
   if(st_ctl%param(1)>1 .and. mpinr==0)  print*,'func bembb2hacapk end'
 9999 continue
