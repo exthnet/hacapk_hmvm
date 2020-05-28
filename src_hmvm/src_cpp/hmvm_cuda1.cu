@@ -391,8 +391,8 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
   何故かdivが8or16の時にa2i=1,aa=1の結果がおかしい
   div8は誤差の範囲かも知れない、div16はよりおかしい
 */
-  if(kernel>=1000&&kernel<1096){
-	int subkernel = kernel-1000;
+  if(kernel>=0&&kernel<96){
+	int subkernel = kernel;
 	int div, a2t, a2i, aa, da;
 	div = subkernel%6;
 	a2t = (subkernel/6)%2;
@@ -406,23 +406,25 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	printf("subkernel=%d = %s\n", subkernel, fname);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_hybrid1_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-	   v, b, nd, fname, 0,
-	   div, a2t, a2i, aa, da);
+	if(dump_result)
+	  hmvm_cuda_hybrid1_proxy<T>
+		(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+		 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+		 d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
+		 v, b, nd, fname, 0,
+		 div, a2t, a2i, aa, da);
 	// BENCH
-	hmvm_cuda_hybrid1_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
-	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-	   v, b, nd, fname, 5,
-	   div, a2t, a2i, aa, da);
+	if(nbench>0)
+	  hmvm_cuda_hybrid1_proxy<T>
+		(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+		 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
+		 d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
+		 v, b, nd, fname, nbench,
+		 div, a2t, a2i, aa, da);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########

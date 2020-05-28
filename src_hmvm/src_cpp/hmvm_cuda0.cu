@@ -731,10 +731,11 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	a2t = subkernel%2;
 	a2i = (subkernel/2)%2;
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"seq_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(name,0xff,"seq_a2t%d_a2i%d_%s", a2t, a2i, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
+	if(dump_result)
 	hmvm_cuda_seq_proxy<T>
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
@@ -743,12 +744,13 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	   v, b, nd, fname, 0,
 	   a2t, a2i);
 	// BENCH
+	if(nbench>0)
 	hmvm_cuda_seq_proxy<T>
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt, d_sm.kt,
 	   d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
+	   v, b, nd, fname, nbench,
 	   a2t, a2i);
   }
 
@@ -766,10 +768,11 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	a2t = subkernel%2;
 	a2i = (subkernel/2)%2;
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"block_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(name,0xff,"block_a2t%d_a2i%d_%s", a2t, a2i, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
+	if(dump_result)
 	hmvm_cuda_block_proxy<T>
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
@@ -778,12 +781,13 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	   v, b, nd, fname, 0,
 	   a2t, a2i);
 	// BENCH
+	if(nbench>0)
 	hmvm_cuda_block_proxy<T>
 	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
 	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
 	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
+	   v, b, nd, fname, nbench,
 	   a2t, a2i);
   }
 

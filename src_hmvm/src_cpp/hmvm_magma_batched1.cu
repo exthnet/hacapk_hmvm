@@ -161,7 +161,7 @@ void  hmvm_magma_batched_calc_nocheck
 }
 
 template <class T>
-void hmvm_magma_batched_proxy
+void hmvm_magma_batched1_proxy
 (
  int nbatch1a,
  T **d_As1a, T **d_Xs1a, T **d_Ys1a,
@@ -244,7 +244,7 @@ void hmvm_magma_batched_proxy
 // ######## ######## ######## ######## ######## ######## ######## ########
 
 template<class T>
-void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
+void hmvm_magma_batched1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 {
   matrix2<T> d_sm;
   int i, nd = mat2->nd, ktmax = mat2->ktmax, nlf = mat2->nlf;
@@ -253,7 +253,7 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result, int
   int ip;
   int len;
   cudaError_t ret;
-  printf("hmvm_magma_batched_%s: begin\n", typeid(T).name()); fflush(stdout);
+  printf("hmvm_magma_batched1_%s: begin\n", typeid(T).name()); fflush(stdout);
   v    = new T[nd];
   for(i=0;i<nd;i++){
 	v[i] = (T)0.0;
@@ -506,26 +506,24 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result, int
   {
 	const char *names[]={"default","nocheck"};
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"magma_batched_%d_%s_%s", kernel, names[kernel], typeid(T).name());
+	snprintf(name,0xff,"magma_batched1_%d_%s_%s", kernel, names[kernel], typeid(T).name());
 	snprintf(fname,0xff,"result_%s.txt", name);
 	printf("fname = %s\n", fname);
 
 	// EXEC
-	hmvm_magma_batched_proxy<T>
-	  (
-	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
-	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
-	   queue, kernel,
-	   d_v, nd, fname, 0);
+	if(dump_result)hmvm_magma_batched1_proxy<T>
+					 (
+					  nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
+					  nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
+					  nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+					  queue, kernel, d_v, nd, fname, 0);
 	// BENCH
-	hmvm_magma_batched_proxy<T>
-	  (
-	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
-	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
-	   queue, kernel,
-	   d_v, nd, fname, 5);
+	if(nbench>0)hmvm_magma_batched1_proxy<T>
+				  (
+				   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
+				   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
+				   nbatch2, d_As2, d_Xs2, d_Ys2, d_Ms2, d_Ns2, d_lddas2, d_incxs2, d_incys2,
+				   queue, kernel,  d_v, nd, fname, nbench);
   }
   magma_queue_destroy(queue);
 
@@ -553,12 +551,12 @@ void hmvm_magma_batched(matrix2<T> *mat2, T *b, int kernel, int dump_result, int
   cudaFree(d_v);
 
   delete [] v;
-  printf("hmvm_magma_batched: end\n");
+  printf("hmvm_magma_batched1: end\n");
 }
 
 
 // ######## ######## ######## ######## ######## ######## ######## ########
 // template関数の実体化のための宣言
 // ######## ######## ######## ######## ######## ######## ######## ########
-template void hmvm_magma_batched<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result, int nbench);
-template void hmvm_magma_batched<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result, int nbench);
+template void hmvm_magma_batched1<float>(matrix2<float>  *mat2, float *b, int kernel, int dump_result, int nbench);
+template void hmvm_magma_batched1<double>(matrix2<double> *mat2, double *b, int kernel, int dump_result, int nbench);

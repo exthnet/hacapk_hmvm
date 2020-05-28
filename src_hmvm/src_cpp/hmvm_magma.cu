@@ -103,7 +103,6 @@ void hmvm_magma_proxy
  T *v, T *b, int nd, char *fname, int bench,
  matrix2<T> *mat2)
 {
-#if 1
   int M=5, L=M+bench;
   FILE *F;
   int i, l, lmax;
@@ -152,7 +151,6 @@ void hmvm_magma_proxy
 	printf("TIME %d hmvm_magma%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
-#endif
 }
 
 // ######## ######## ######## ######## ######## ######## ######## ########
@@ -238,21 +236,23 @@ void hmvm_magma(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_magma_proxy<T>
-	  (d_v, d_b, mat2->nlf, mat2->ktmax,
-	   mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
-	   mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 0,
-	   mat2);
+	if(dump_result)
+	  hmvm_magma_proxy<T>
+		(d_v, d_b, mat2->nlf, mat2->ktmax,
+		 mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
+		 mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 v, b, nd, fname, 0,
+		 mat2);
 	// BENCH
-	hmvm_magma_proxy<T>
-	  (d_v, d_b, mat2->nlf, mat2->ktmax,
-	   mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
-	   mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   v, b, nd, fname, 5,
-	   mat2);
+	if(nbench>0)
+	  hmvm_magma_proxy<T>
+		(d_v, d_b, mat2->nlf, mat2->ktmax,
+		 mat2->ltmtx, mat2->ndt, mat2->ndl, mat2->nstrtl, mat2->nstrtt, mat2->kt,
+		 mat2->a1, mat2->a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 v, b, nd, fname, nbench,
+		 mat2);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########

@@ -35,7 +35,7 @@ int main(int argc, char **argv)
   int nd = matD->nd;
   printf("nd=%d\n",nd);
   double *b=NULL;
-  b = new double[nd];//(double*)malloc(sizeof(double)*matD.nd);
+  b = new double[nd];
   for(i=0;i<nd;i++){
 	b[i] = sin((double)(i+1));
   }
@@ -63,6 +63,7 @@ int main(int argc, char **argv)
   hmvm_seq<double>(matD, matD2, b, dump_result, nbench);
   // OpenMP
   hmvm_omp<double>(matD, matD2, b, dump_result, nbench);
+  /*
   // MKL
 #ifdef __INTEL_COMPILER
   hmvm_blas_p(matD, matD2, b, dump_result, nbench);
@@ -74,8 +75,9 @@ int main(int argc, char **argv)
   hmvm_cblas_s(matD, matD2, b, dump_result, nbench);
   hmvm_cblas_s_bench(matD, matD2, b, nbench);
 #endif
-  // CUDA
+  */
 #ifdef _USE_CUDA
+  // CUDA
   // sequential
   for(i=0;i<4;i++)hmvm_cuda0<double>(matD2, b, i, dump_result, nbench);
   // block
@@ -86,13 +88,13 @@ int main(int argc, char **argv)
   for(i=0;i<1536;i++)hmvm_cuda2<double>(matD2, b, i, dump_result, nbench);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<double>(matD2, b, i, dump_result, nbench);
-#endif
   // MAGMA BLAS
   hmvm_magma<double>(matD2, b, 0, dump_result, nbench);
   hmvm_magma_batched1<double>(matD2, b, 0, dump_result, nbench);
   hmvm_magma_batched1<double>(matD2, b, 1, dump_result, nbench);
   hmvm_magma_batched2<double>(matD2, b, 0, dump_result, nbench);
   hmvm_magma_batched2<double>(matD2, b, 1, dump_result, nbench);
+#endif
   delete [] b;
 #endif
 
@@ -115,8 +117,8 @@ int main(int argc, char **argv)
   hmvm_seq<float>(matF, matF2, fb, dump_result, nbench);
   // OpenMP
   hmvm_omp<float>(matF, matF2, fb, dump_result, nbench);
-  // CUDA
 #ifdef _USE_CUDA
+  // CUDA
   // sequential
   for(i=0;i<4;i++)hmvm_cuda0<float>(matF2, fb, i, dump_result, nbench);
   // block
@@ -127,14 +129,13 @@ int main(int argc, char **argv)
   for(i=0;i<1536;i++)hmvm_cuda2<float>(matF2, fb, i, dump_result, nbench);
   // hybrid3: DIV(1,2,4,8,16,32), MUL(1,2,3,...,16), ATOMIC(1,2)=1536patterns
   for(i=0;i<1536;i++)hmvm_cuda3<float>(matF2, fb, i, dump_result, nbench);
-#endif
-  // MAGMA BLAS
   // MAGMA BLAS
   hmvm_magma<float>(matF2, fb, 0, dump_result, nbench);
-  hmvm_magma_batched<float>(matF2, fb, 0, dump_result, nbench);
-  hmvm_magma_batched<float>(matF2, fb, 1, dump_result, nbench);
+  hmvm_magma_batched1<float>(matF2, fb, 0, dump_result, nbench);
+  hmvm_magma_batched1<float>(matF2, fb, 1, dump_result, nbench);
   hmvm_magma_batched2<float>(matF2, fb, 0, dump_result, nbench);
   hmvm_magma_batched2<float>(matF2, fb, 1, dump_result, nbench);
+#endif
   delete [] fb;
 #endif
 

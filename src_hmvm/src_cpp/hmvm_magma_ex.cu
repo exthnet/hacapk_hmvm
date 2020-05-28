@@ -17,7 +17,7 @@
  */
 
 void  hmvm_magma_calc
-(double *d_zaut, double *d_zu, matrix2<double> *d_mat, double *d_zbut)
+(double *d_zaut, double *d_zu, matrix2<double> *h_mat, matrix2<double> *d_mat, double *d_zbut)
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
@@ -28,21 +28,21 @@ void  hmvm_magma_calc
   magma_queue_t queue;
   magma_queue_create(dev, &queue);
 
-  for(ip=0; ip<d_mat->nlf; ip++){
-    ndl    = d_mat->ndl[ip];
-    ndt    = d_mat->ndt[ip];
-    nstrtl = d_mat->nstrtl[ip];
-    nstrtt = d_mat->nstrtt[ip];
-    ltmtx  = d_mat->ltmtx[ip];
+  for(ip=0; ip<h_mat->nlf; ip++){
+    ndl    = h_mat->ndl[ip];
+    ndt    = h_mat->ndt[ip];
+    nstrtl = h_mat->nstrtl[ip];
+    nstrtt = h_mat->nstrtt[ip];
+    ltmtx  = h_mat->ltmtx[ip];
     if(ltmtx==1){
-      kt = d_mat->kt[ip];
+      kt = h_mat->kt[ip];
 	  //cudaMemcpy(&d_zbut, &h_zero, sizeof(double)*kt, cudaMemcpyHostToDevice);
-	  head = d_mat->a1[ip];
+	  head = h_mat->a1[ip];
 	  magma_dgemv(MagmaTrans, ndt,kt, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
-	  head = d_mat->a2[ip];
+	  head = h_mat->a2[ip];
 	  magma_dgemv(MagmaNoTrans, ndl,kt, done, &d_mat->rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
     } else if(ltmtx==2){
-	  head = d_mat->a1[ip];
+	  head = h_mat->a1[ip];
 	  magma_dgemv(MagmaTrans, ndt,ndl, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
     }
   }
@@ -52,7 +52,7 @@ void  hmvm_magma_calc
 }
 
 void  hmvm_magma_calc
-(float *d_zaut, float *d_zu, matrix2<float> *d_mat, float *d_zbut)
+(float *d_zaut, float *d_zu, matrix2<float> *h_mat, matrix2<float> *d_mat, float *d_zbut)
 {
   int ip;
   int ndl,ndt,nstrtl,nstrtt,kt,ltmtx;
@@ -63,21 +63,21 @@ void  hmvm_magma_calc
   magma_queue_t queue;
   magma_queue_create(dev, &queue);
 
-  for(ip=0; ip<d_mat->nlf; ip++){
-    ndl    = d_mat->ndl[ip];
-    ndt    = d_mat->ndt[ip];
-    nstrtl = d_mat->nstrtl[ip];
-    nstrtt = d_mat->nstrtt[ip];
-    ltmtx  = d_mat->ltmtx[ip];
+  for(ip=0; ip<h_mat->nlf; ip++){
+    ndl    = h_mat->ndl[ip];
+    ndt    = h_mat->ndt[ip];
+    nstrtl = h_mat->nstrtl[ip];
+    nstrtt = h_mat->nstrtt[ip];
+    ltmtx  = h_mat->ltmtx[ip];
     if(ltmtx==1){
-      kt = d_mat->kt[ip];
+      kt = h_mat->kt[ip];
 	  //cudaMemcpy(&d_zbut, &h_zero, sizeof(double)*kt, cudaMemcpyHostToDevice);
-	  head = d_mat->a1[ip];
+	  head = h_mat->a1[ip];
 	  magma_sgemv(MagmaTrans, ndt,kt, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,dzero,d_zbut,1, queue);
-	  head = d_mat->a2[ip];
+	  head = h_mat->a2[ip];
 	  magma_sgemv(MagmaNoTrans, ndl,kt, done, &d_mat->rowmat[head], ndl,d_zbut,1,done,&d_zaut[nstrtl-1],1, queue);
     } else if(ltmtx==2){
-	  head = d_mat->a1[ip];
+	  head = h_mat->a1[ip];
 	  magma_sgemv(MagmaTrans, ndt,ndl, done, &d_mat->rowmat[head], ndt,&d_zu[nstrtt-1],1,done,&d_zaut[nstrtl-1],1, queue);
     }
   }
@@ -111,7 +111,7 @@ void hmvm_magma_proxy
 	d1 = omp_get_wtime();
 
 	hmvm_magma_calc
-	  (d_zaut, d_zu, d_mat, d_tmp);
+	  (d_zaut, d_zu, h_mat, d_mat, d_tmp);
 
 	cudaDeviceSynchronize();
 	d2 = omp_get_wtime();

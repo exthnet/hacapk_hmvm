@@ -392,8 +392,8 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
   - aatomic：approxの計算をatomic優先にするかwarp shuffle併用するか
   - datomic：denseの計算をatomic優先にするかwarp shuffle併用するか
 */
-  if((kernel>=20000)&&(kernel<21536)){
-	int subkernel = kernel-20000;
+  if((kernel>=0)&&(kernel<1536)){
+	int subkernel = kernel;
 	int div, mul, a2t, a2i, aa, da;
 	div = subkernel%6;
 	mul = (subkernel/6)%16 + 1;
@@ -408,23 +408,25 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	printf("subkernel=%d = %s\n", subkernel, fname);
 	printf("fname = %s\n", fname);
 	// EXEC
-	hmvm_cuda_hybrid3_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-	   v, b, nd, fname, 0,
-	   div, mul, a2t, a2i, aa, da);
+	if(dump_result)
+	  hmvm_cuda_hybrid3_proxy<T>
+		(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+		 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+		 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
+		 v, b, nd, fname, 0,
+		 div, mul, a2t, a2i, aa, da);
 	// BENCH
-	hmvm_cuda_hybrid3_proxy<T>
-	  (d_v, d_b, d_sm.nlf, d_sm.ktmax,
-	   d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
-	   d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
-	   d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
-	   (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-	   v, b, nd, fname, 5,
-	   div, mul, a2t, a2i, aa, da);
+	if(nbench>0)
+	  hmvm_cuda_hybrid3_proxy<T>
+		(d_v, d_b, d_sm.nlf, d_sm.ktmax,
+		 d_sm.ltmtx, d_sm.ndt, d_sm.ndl, d_sm.nstrtl, d_sm.nstrtt,
+		 d_sm.kt, d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
+		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
+		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
+		 v, b, nd, fname, nbench,
+		 div, mul, a2t, a2i, aa, da);
   }
 #endif
 

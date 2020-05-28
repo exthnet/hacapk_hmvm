@@ -610,23 +610,21 @@ void hmvm_magma_batched2(matrix2<T> *mat2, T *b, int kernel, int dump_result, in
 	printf("fname = %s\n", fname);
 
 	// EXEC
-	hmvm_magma_batched2_proxy<T>
-	  (
-	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
-	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
-	   nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
-	   queue, kernel,
-	   d_v, nd, fname, 0);
+	if(dump_result)hmvm_magma_batched2_proxy<T>
+					 (
+					  nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
+					  nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
+					  nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+					  nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
+					  queue, kernel, d_v, nd, fname, 0);
 	// BENCH
-	hmvm_magma_batched2_proxy<T>
-	  (
-	   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
-	   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
-	   nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
-	   nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
-	   queue, kernel,
-	   d_v, nd, fname, 5);
+	if(nbench>0)hmvm_magma_batched2_proxy<T>
+				  (
+				   nbatch1a, d_As1a, d_Xs1a, d_Ys1a, d_Ms1a, d_Ns1a, d_lddas1a, d_incxs1a, d_incys1a,
+				   nbatch1b, d_As1b, d_Xs1b, d_Ys1b, d_Ms1b, d_Ns1b, d_lddas1b, d_incxs1b, d_incys1b,
+				   nbatch2a, d_As2a, d_Xs2a, d_Ys2a, d_Ms2a, d_Ns2a, d_lddas2a, d_incxs2a, d_incys2a,
+				   nbatch2b, d_As2b, d_Xs2b, d_Ys2b, d_Ms2b, d_Ns2b, d_lddas2b, d_incxs2b, d_incys2b,
+				   queue, kernel, d_v, nd, fname, nbench);
   }
   magma_queue_destroy(queue);
 

@@ -524,7 +524,7 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	a2t = subkernel%2;
 	a2i = (subkernel/2)%2;
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"seq_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(name,0xff,"seq_a2t%d_a2i%d_%s", a2t, a2i, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
@@ -547,7 +547,7 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	a2t = subkernel%2;
 	a2i = (subkernel/2)%2;
 	char name[0xff], fname[0xff];
-	snprintf(name,0xff,"block_a2t%d_a2i%d%s", a2t, a2i, typeid(T).name());
+	snprintf(name,0xff,"block_a2t%d_a2i%d_%s", a2t, a2i, typeid(T).name());
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
