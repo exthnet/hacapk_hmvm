@@ -235,7 +235,7 @@ template <class T, int div, int mul, int a2t, int a2i, int aa, int da>
 void hmvm_cuda_hybrid3_proxy
 (T *d_zaut, T *d_zu, matrix2<T> *h_mat, matrix2<T> *d_mat,
  int blocks, int threads, int shms,
- T *v, T *b, char *fname, int bench)
+ T *v, T *b, char *name, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -274,7 +274,7 @@ void hmvm_cuda_hybrid3_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda_hybrid3%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda_%s min %e max %e avg %e\n", L-M, name, dmin, dmax, davg);
   }
   delete [] dtimes;
 }
@@ -386,13 +386,13 @@ void hmvm_cuda3(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	  hmvm_cuda_hybrid3_proxy<T>
 		(d_v, d_b, mat2, &d_sm,
 		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-		 v, b, fname, 0, div, mul, a2t, a2i, aa, da);
+		 v, b, name, fname, 0, div, mul, a2t, a2i, aa, da);
 	// BENCH
 	if(nbench>0)
 	  hmvm_cuda_hybrid3_proxy<T>
 		(d_v, d_b, mat2, &d_sm,
 		 (d_sm.napprox+mul-1)/mul+(d_sm.ndense+mul-1)/mul, 32*mul, d_sm.ktmax*sizeof(T)*mul,
-		 v, b, fname, nbench, div, mul, a2t, a2i, aa, da);
+		 v, b, name, fname, nbench, div, mul, a2t, a2i, aa, da);
   }
 #endif
 

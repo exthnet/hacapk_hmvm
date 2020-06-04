@@ -345,7 +345,7 @@ void hmvm_seq_proxy1(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, i
 		if(dmax<dtimes[i])dmax=dtimes[i];
 	  }
 	  davg /= (L-M);
-	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
+	  printf("TIME hmvm_%s_%s %d times min %e max %e avg %e\n", subname, typeid(T).name(), L, dmin, dmax, davg);
 	}
   }
   free(v);
@@ -392,7 +392,7 @@ void hmvm_seq_proxy2(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, i
 		if(dmax<dtimes[i])dmax=dtimes[i];
 	  }
 	  davg /= (L-M);
-	  printf("TIME hmvm_%s %d times min %e max %e avg %e\n", subname, L, dmin, dmax, davg);
+	  printf("TIME hmvm_%s_%s %d times min %e max %e avg %e\n", subname, typeid(T).name(), L, dmin, dmax, davg);
 	}
   }
   free(v);

@@ -1018,7 +1018,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1 min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (loop interchanged)
@@ -1038,7 +1038,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1i min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1i_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (trans)
@@ -1058,7 +1058,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1t min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1t_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (trans, loop interchanged)
@@ -1078,7 +1078,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1ti min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1ti_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // 1 + atomic
@@ -1099,7 +1099,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (loop interchanged)
@@ -1119,7 +1119,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1i_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1i_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (trans)
@@ -1139,7 +1139,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1t_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1t_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm (trans, loop interchanged)
@@ -1159,7 +1159,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_1ti_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_1ti_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
 
@@ -1183,7 +1183,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2 min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (loop interchanged)
@@ -1205,7 +1205,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2i min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2i_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (trans)
@@ -1227,7 +1227,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2t min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2t_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (trans, loop interchanged)
@@ -1249,7 +1249,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2ti min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2ti_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // 2 + atomic
@@ -1272,7 +1272,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (loop interchanged)
@@ -1294,7 +1294,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2i_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2i_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (trans)
@@ -1316,7 +1316,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2t_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2t_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   // hmvm using rowmat array (trans, loop interchanged)
@@ -1338,7 +1338,7 @@ void hmvm_omp_bench(const matrix<T> *mat, const matrix2<T> *mat2, const T *b, in
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-5);
-	printf("TIME %d hmvm_omp_2ti_atomic min %e max %e avg %e\n", L, dmin, dmax, davg);
+	printf("TIME %d hmvm_omp_2ti_atomic_%s min %e max %e avg %e\n", L, typeid(T).name(), dmin, dmax, davg);
   }
 
   free(v);

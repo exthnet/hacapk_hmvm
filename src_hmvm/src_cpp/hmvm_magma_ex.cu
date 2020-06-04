@@ -133,7 +133,7 @@ void hmvm_magma_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_magma%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_magma_%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
   }
   delete [] dtimes;
 }

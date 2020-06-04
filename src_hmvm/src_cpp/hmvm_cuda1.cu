@@ -230,7 +230,7 @@ void hmvm_cuda_hybrid1_proxy
  int *a1, int *a2, T *rowmat, T *rowmat_t,
  int napprox, int *approx, int ndense, int *dense,
  int blocks, int threads, int shms,
- T *v, T *b, int nd, char *fname, int bench,
+ T *v, T *b, int nd, char *name, char *fname, int bench,
  int div, int a2t, int a2i, int aatomic, int datomic)
 {
   int M=5, L=M+bench;
@@ -298,7 +298,7 @@ void hmvm_cuda_hybrid1_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda_hybrid1%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda_%s min %e max %e avg %e\n", L-M, name, dmin, dmax, davg);
   }
   delete [] dtimes;
 }
@@ -413,7 +413,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 		 d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 		 d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-		 v, b, nd, fname, 0,
+		 v, b, nd, name, fname, 0,
 		 div, a2t, a2i, aa, da);
 	// BENCH
 	if(nbench>0)
@@ -423,7 +423,7 @@ void hmvm_cuda1(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 		 d_sm.a1, d_sm.a2, d_sm.rowmat, d_sm.rowmat_t,
 		 d_sm.napprox, d_sm.approx, d_sm.ndense, d_sm.dense,
 		 d_sm.napprox+d_sm.ndense, 32, d_sm.ktmax*sizeof(T),
-		 v, b, nd, fname, nbench,
+		 v, b, nd, name, fname, nbench,
 		 div, a2t, a2i, aa, da);
   }
 

@@ -185,7 +185,7 @@ template <class T, int a2t, int a2i>
 void hmvm_cuda_seq_proxy
 (T *d_zaut, T *d_zu,
  matrix2<T> *h_mat, matrix2<T> *d_mat,
- T *v, T *b, char *fname, int bench)
+ T *v, T *b, char *name, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -225,7 +225,7 @@ void hmvm_cuda_seq_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda0_seq%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda0_%s min %e max %e avg %e\n", L-M, name, dmin, dmax, davg);
   }
   delete [] dtimes;
 }
@@ -234,13 +234,13 @@ template <class T>
 void hmvm_cuda_seq_proxy
 (T *d_zaut, T *d_zu,
  matrix2<T> *h_mat, matrix2<T> *d_mat,
- T *v, T *b, char *fname, int bench,
+ T *v, T *b, char *name, char *fname, int bench,
  int a2t, int a2i)
 {
-  if(a2t==0 && a2i==0)hmvm_cuda_seq_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==0 && a2i==1)hmvm_cuda_seq_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==1 && a2i==0)hmvm_cuda_seq_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==1 && a2i==1)hmvm_cuda_seq_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==0 && a2i==0)hmvm_cuda_seq_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==0 && a2i==1)hmvm_cuda_seq_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==1 && a2i==0)hmvm_cuda_seq_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==1 && a2i==1)hmvm_cuda_seq_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
 }
 
 // ######## ######## ######## ######## ######## ######## ######## ########
@@ -384,7 +384,7 @@ template <class T, int a2t, int a2i>
 void hmvm_cuda_block_proxy
 (T *d_zaut, T *d_zu,
  matrix2<T> *h_mat, matrix2<T> *d_mat,
- T *v, T *b, char *fname, int bench)
+ T *v, T *b, char *name, char *fname, int bench)
 {
   int M=5, L=M+bench;
   FILE *F;
@@ -424,7 +424,7 @@ void hmvm_cuda_block_proxy
 	  if(dmax<dtimes[i])dmax=dtimes[i];
 	}
 	davg /= (L-M);
-	printf("TIME %d hmvm_cuda0_block%s min %e max %e avg %e\n", L-M, typeid(T).name(), dmin, dmax, davg);
+	printf("TIME %d hmvm_cuda0_%s min %e max %e avg %e\n", L-M, name, dmin, dmax, davg);
   }
   delete [] dtimes;
 }
@@ -433,13 +433,13 @@ template <class T>
 void hmvm_cuda_block_proxy
 (T *d_zaut, T *d_zu,
  matrix2<T> *h_mat, matrix2<T> *d_mat,
- T *v, T *b, char *fname, int bench,
+ T *v, T *b, char *name, char *fname, int bench,
  int a2t, int a2i)
 {
-  if(a2t==0 && a2i==0)hmvm_cuda_block_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==0 && a2i==1)hmvm_cuda_block_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==1 && a2i==0)hmvm_cuda_block_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
-  if(a2t==1 && a2i==1)hmvm_cuda_block_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, fname, bench);
+  if(a2t==0 && a2i==0)hmvm_cuda_block_proxy<T,0,0>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==0 && a2i==1)hmvm_cuda_block_proxy<T,0,1>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==1 && a2i==0)hmvm_cuda_block_proxy<T,1,0>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
+  if(a2t==1 && a2i==1)hmvm_cuda_block_proxy<T,1,1>(d_zaut, d_zu, h_mat, d_mat, v, b, name, fname, bench);
 }
 
 // ######## ######## ######## ######## ######## ######## ######## ########
@@ -528,9 +528,9 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	if(dump_result)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, 0, a2t, a2i);
+	if(dump_result)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, name, fname, 0, a2t, a2i);
 	// BENCH
-	if(nbench>0)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, nbench, a2t, a2i);
+	if(nbench>0)hmvm_cuda_seq_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, name, fname, nbench, a2t, a2i);
   }
 
   /*
@@ -551,9 +551,9 @@ void hmvm_cuda0(matrix2<T> *mat2, T *b, int kernel, int dump_result, int nbench)
 	snprintf(fname,0xff,"result_cuda0_%s.txt", name);
 	printf("fname = %s\n", fname);
 	// EXEC
-	if(dump_result)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, 0, a2t, a2i);
+	if(dump_result)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, name, fname, 0, a2t, a2i);
 	// BENCH
-	if(nbench>0)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, fname, nbench, a2t, a2i);
+	if(nbench>0)hmvm_cuda_block_proxy<T>(d_v, d_b, mat2, &d_sm, v, b, name, fname, nbench, a2t, a2i);
   }
 
   // ######## ######## ######## ######## ######## ######## ######## ########
